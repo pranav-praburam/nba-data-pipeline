@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Float, Index, Integer, String
+from sqlalchemy import Column, DateTime, Float, Index, Integer, String, Text
+from sqlalchemy.sql import func
 from app.db.database import Base
 
 class Game(Base):
@@ -27,3 +28,19 @@ class Game(Base):
     fg_pct = Column(Float, nullable=True)
     fg3_pct = Column(Float, nullable=True)
     ft_pct = Column(Float, nullable=True)
+
+
+class PipelineRun(Base):
+    __tablename__ = "pipeline_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    pipeline_name = Column(String, nullable=False)
+    season = Column(String, nullable=False)
+    mode = Column(String, nullable=False)
+    rows_fetched = Column(Integer, nullable=False, default=0)
+    rows_inserted = Column(Integer, nullable=False, default=0)
+    rows_skipped = Column(Integer, nullable=False, default=0)
+    status = Column(String, nullable=False)
+    error_message = Column(Text, nullable=True)
+    started_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)

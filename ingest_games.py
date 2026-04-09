@@ -1,10 +1,12 @@
 import sys
+from datetime import datetime, timezone
+
 import pandas as pd
 from nba_api.stats.endpoints import LeagueGameFinder
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
-from app.db.database import SessionLocal
-from app.db.models import Game
+from app.db.database import Base, SessionLocal, engine
+from app.db.models import Game, PipelineRun
 
 def fetch_games_dataframe(season="2024-25"):
     finder = LeagueGameFinder(
@@ -61,9 +63,34 @@ def build_game_records(df):
         )
     return records
 
+def record_pipeline_run(
+    db,
+    season,
+    mode,
+    rows_fetched,
+    rows_inserted,
+    rows_skipped,
+    status,
+    error_message=None,
+):
+    run = PipelineRun(
+        pipeline_name="games_ingestion",
+        season=season,
+        mode=mode,
+        rows_fetched=rows_fetched,
+        rows_inserted=rows_inserted,
+        rows_skipped=rows_skipped,
+        status=status,
+        error_message=error_message,
+        completed_at=datetime.now(timezone.utc),
+    )
+    db.add(run)
+
 def ingest_games(season="2024-25", full_refresh=False):
+    Base.metadata.create_all(bind=engine)
     df = fetch_games_dataframe(season=season).sort_values(["GAME_DATE", "GAME_ID", "TEAM_ID"])
     db = SessionLocal()
+    mode = "full_refresh" if full_refresh else "incremental"
 
     try:
         season_ids = df["SEASON_ID"].astype(str).unique().tolist()
@@ -74,6 +101,16 @@ def ingest_games(season="2024-25", full_refresh=False):
             df = df[df["GAME_DATE"] > latest_game_date]
 
         if df.empty:
+            record_pipeline_run(
+                db=db,
+                season=season,
+                mode=mode,
+                rows_fetched=0,
+                rows_inserted=0,
+                rows_skipped=0,
+                status="success",
+            )
+            db.commit()
             scope = "full refresh" if full_refresh else "incremental load"
             print(
                 f"No new team-game rows found for season {season} during {scope}."
@@ -88,9 +125,18 @@ def ingest_games(season="2024-25", full_refresh=False):
         )
         result = db.execute(statement)
 
-        db.commit()
         inserted_count = result.rowcount if result.rowcount and result.rowcount > 0 else 0
         skipped_count = len(records) - inserted_count
+        record_pipeline_run(
+            db=db,
+            season=season,
+            mode=mode,
+            rows_fetched=len(records),
+            rows_inserted=inserted_count,
+            rows_skipped=skipped_count,
+            status="success",
+        )
+        db.commit()
         print(
             f"Fetched {len(records)} new team-game rows for season {season}. "
             f"Inserted {inserted_count}, skipped {skipped_count} existing rows."
@@ -98,6 +144,18 @@ def ingest_games(season="2024-25", full_refresh=False):
 
     except Exception as e:
         db.rollback()
+        error_message = str(e)
+        record_pipeline_run(
+            db=db,
+            season=season,
+            mode=mode,
+            rows_fetched=0,
+            rows_inserted=0,
+            rows_skipped=0,
+            status="failed",
+            error_message=error_message[:2000],
+        )
+        db.commit()
         print("Error inserting games:", e)
 
     finally:
