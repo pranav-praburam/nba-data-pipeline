@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import case, func
 from typing import Optional
+from html import escape
 from app.db.database import get_db
 from app.db.models import Game, PipelineRun
 
@@ -391,6 +392,230 @@ def team_rankings(
         }
         for index, row in enumerate(results)
     ]
+
+
+@router.get("/dashboard")
+def dashboard(db: Session = Depends(get_db)):
+    top_scoring_teams = team_rankings(metric="points", limit=8, db=db)
+    three_point_teams = team_rankings(metric="fg3_pct", limit=5, db=db)
+    recent_games = get_games(
+        limit=8,
+        team=None,
+        season=None,
+        start_date=None,
+        end_date=None,
+        result=None,
+        db=db,
+    )
+    latest_run = get_pipeline_runs(limit=1, db=db)
+
+    max_points = max((team["average"] for team in top_scoring_teams), default=1)
+    points_rows = "\n".join(
+        f"""
+        <div class="bar-row">
+            <span>{team["rank"]}. {escape(team["team"])}</span>
+            <div class="bar-track">
+                <div class="bar-fill" style="width: {(team["average"] / max_points) * 100:.1f}%"></div>
+            </div>
+            <strong>{team["average"]}</strong>
+        </div>
+        """
+        for team in top_scoring_teams
+    )
+    three_point_rows = "\n".join(
+        f"<li><span>{escape(team['team'])}</span><strong>{team['average']}</strong></li>"
+        for team in three_point_teams
+    )
+    game_rows = "\n".join(
+        f"""
+        <tr>
+            <td>{escape(game["game_date"])}</td>
+            <td>{escape(game["team"])}</td>
+            <td>{escape(game["opponent"])}</td>
+            <td>{escape(game["wl"] or "")}</td>
+            <td>{game["points"]}</td>
+        </tr>
+        """
+        for game in recent_games
+    )
+    run = latest_run[0] if latest_run else {}
+    run_status = escape(str(run.get("status", "unknown")))
+    rows_inserted = run.get("rows_inserted", 0)
+    completed_at = escape(str(run.get("completed_at", "not available")))
+
+    return HTMLResponse(
+        f"""
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>NBA Analytics Dashboard</title>
+            <style>
+                :root {{
+                    --ink: #17202a;
+                    --muted: #64748b;
+                    --court: #edb458;
+                    --paint: #174ea6;
+                    --rim: #d1495b;
+                    --paper: #fffaf0;
+                    --panel: rgba(255, 250, 240, 0.9);
+                    --line: rgba(23, 32, 42, 0.14);
+                }}
+                * {{ box-sizing: border-box; }}
+                body {{
+                    margin: 0;
+                    font-family: Georgia, "Times New Roman", serif;
+                    color: var(--ink);
+                    background:
+                        linear-gradient(90deg, rgba(23, 78, 166, 0.08) 1px, transparent 1px),
+                        linear-gradient(0deg, rgba(23, 78, 166, 0.08) 1px, transparent 1px),
+                        radial-gradient(circle at 15% 10%, rgba(237, 180, 88, 0.6), transparent 28rem),
+                        linear-gradient(135deg, #fff8ea 0%, #e8f1ff 100%);
+                    background-size: 48px 48px, 48px 48px, auto, auto;
+                    min-height: 100vh;
+                }}
+                main {{
+                    width: min(1180px, calc(100% - 32px));
+                    margin: 0 auto;
+                    padding: 42px 0;
+                }}
+                .topline {{
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 18px;
+                    align-items: end;
+                    margin-bottom: 24px;
+                }}
+                h1 {{
+                    margin: 0;
+                    font-size: clamp(2.4rem, 7vw, 5rem);
+                    line-height: 0.9;
+                    letter-spacing: -0.075em;
+                }}
+                .eyebrow {{
+                    color: var(--paint);
+                    font-weight: 700;
+                    letter-spacing: 0.16em;
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                }}
+                a {{ color: var(--paint); font-weight: 700; text-decoration: none; }}
+                .grid {{
+                    display: grid;
+                    grid-template-columns: 1.35fr 0.65fr;
+                    gap: 22px;
+                }}
+                .card {{
+                    background: var(--panel);
+                    border: 1px solid var(--line);
+                    border-radius: 28px;
+                    box-shadow: 0 24px 80px rgba(23, 32, 42, 0.12);
+                    padding: 24px;
+                    backdrop-filter: blur(10px);
+                }}
+                h2 {{ margin: 0 0 18px; font-size: 1.1rem; letter-spacing: -0.02em; }}
+                .bar-row {{
+                    display: grid;
+                    grid-template-columns: 190px 1fr 64px;
+                    gap: 12px;
+                    align-items: center;
+                    margin: 14px 0;
+                }}
+                .bar-track {{
+                    height: 16px;
+                    background: rgba(23, 78, 166, 0.12);
+                    border-radius: 999px;
+                    overflow: hidden;
+                }}
+                .bar-fill {{
+                    height: 100%;
+                    background: linear-gradient(90deg, var(--paint), var(--rim));
+                    border-radius: inherit;
+                }}
+                .stat {{
+                    background: #fff;
+                    border: 1px solid var(--line);
+                    border-radius: 20px;
+                    padding: 18px;
+                    margin-bottom: 16px;
+                }}
+                .stat strong {{ display: block; font-size: 2rem; letter-spacing: -0.05em; }}
+                .stat span {{ color: var(--muted); }}
+                ul {{ list-style: none; margin: 0; padding: 0; }}
+                li {{
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid var(--line);
+                    padding: 12px 0;
+                }}
+                table {{ width: 100%; border-collapse: collapse; }}
+                th, td {{
+                    text-align: left;
+                    border-bottom: 1px solid var(--line);
+                    padding: 12px 8px;
+                    font-size: 0.95rem;
+                }}
+                th {{ color: var(--muted); font-weight: 700; }}
+                .full {{ grid-column: 1 / -1; }}
+                .nav {{ display: flex; gap: 12px; flex-wrap: wrap; }}
+                @media (max-width: 860px) {{
+                    .grid, .bar-row {{ grid-template-columns: 1fr; }}
+                    .topline {{ align-items: start; flex-direction: column; }}
+                }}
+            </style>
+        </head>
+        <body>
+            <main>
+                <div class="topline">
+                    <div>
+                        <div class="eyebrow">Live Database Analytics</div>
+                        <h1>NBA Team Dashboard</h1>
+                    </div>
+                    <nav class="nav">
+                        <a href="/">Home</a>
+                        <a href="/docs">API Docs</a>
+                        <a href="/pipeline/runs?limit=3">Pipeline Runs</a>
+                    </nav>
+                </div>
+
+                <section class="grid">
+                    <article class="card">
+                        <h2>Top Teams by Average Points</h2>
+                        {points_rows}
+                    </article>
+
+                    <aside>
+                        <div class="stat">
+                            <strong>{rows_inserted}</strong>
+                            <span>rows inserted in latest pipeline run</span>
+                        </div>
+                        <div class="stat">
+                            <strong>{run_status}</strong>
+                            <span>latest pipeline status</span>
+                        </div>
+                        <div class="card">
+                            <h2>Top 3PT% Teams</h2>
+                            <ul>{three_point_rows}</ul>
+                        </div>
+                    </aside>
+
+                    <article class="card full">
+                        <h2>Recent Games</h2>
+                        <table>
+                            <thead>
+                                <tr><th>Date</th><th>Team</th><th>Opponent</th><th>Result</th><th>Points</th></tr>
+                            </thead>
+                            <tbody>{game_rows}</tbody>
+                        </table>
+                        <p class="eyebrow">Latest run completed: {completed_at}</p>
+                    </article>
+                </section>
+            </main>
+        </body>
+        </html>
+        """
+    )
 
 
 @router.get("/pipeline/runs")
