@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import case, func
 from typing import Optional
 from app.db.database import get_db
 from app.db.models import Game, PipelineRun
@@ -9,7 +10,193 @@ router = APIRouter()
 
 @router.get("/")
 def home():
-    return {"message": "NBA Data Pipeline is running"}
+    return HTMLResponse(
+        """
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>NBA Data Pipeline</title>
+            <style>
+                :root {
+                    --ink: #17202a;
+                    --muted: #65758b;
+                    --court: #f3b562;
+                    --paint: #174ea6;
+                    --paper: #fffaf0;
+                    --line: rgba(23, 32, 42, 0.14);
+                }
+                * { box-sizing: border-box; }
+                body {
+                    margin: 0;
+                    font-family: Georgia, "Times New Roman", serif;
+                    color: var(--ink);
+                    background:
+                        radial-gradient(circle at top left, rgba(243, 181, 98, 0.55), transparent 32rem),
+                        linear-gradient(135deg, #fff8ea 0%, #e7f0ff 100%);
+                    min-height: 100vh;
+                }
+                main {
+                    width: min(1120px, calc(100% - 32px));
+                    margin: 0 auto;
+                    padding: 48px 0;
+                }
+                .hero {
+                    display: grid;
+                    grid-template-columns: 1.3fr 0.7fr;
+                    gap: 28px;
+                    align-items: stretch;
+                }
+                .card {
+                    background: rgba(255, 250, 240, 0.88);
+                    border: 1px solid var(--line);
+                    border-radius: 28px;
+                    box-shadow: 0 24px 80px rgba(23, 32, 42, 0.12);
+                    padding: 28px;
+                    backdrop-filter: blur(10px);
+                }
+                h1 {
+                    font-size: clamp(2.4rem, 8vw, 5.8rem);
+                    line-height: 0.9;
+                    letter-spacing: -0.08em;
+                    margin: 0 0 20px;
+                }
+                h2 {
+                    font-size: 1.1rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.16em;
+                    margin: 0 0 18px;
+                    color: var(--paint);
+                }
+                p {
+                    font-size: 1.08rem;
+                    line-height: 1.7;
+                    color: var(--muted);
+                    max-width: 62ch;
+                }
+                .metric-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 16px;
+                    margin-top: 28px;
+                }
+                .metric {
+                    border: 1px solid var(--line);
+                    border-radius: 20px;
+                    padding: 18px;
+                    background: #fff;
+                }
+                .metric strong {
+                    display: block;
+                    font-size: 2rem;
+                    letter-spacing: -0.05em;
+                }
+                .metric span {
+                    color: var(--muted);
+                    font-size: 0.9rem;
+                }
+                .court {
+                    position: relative;
+                    min-height: 340px;
+                    overflow: hidden;
+                    background: linear-gradient(180deg, #f7c06e, #d98f42);
+                }
+                .court::before {
+                    content: "";
+                    position: absolute;
+                    inset: 30px;
+                    border: 3px solid rgba(255, 255, 255, 0.8);
+                    border-radius: 24px;
+                }
+                .court::after {
+                    content: "";
+                    position: absolute;
+                    width: 190px;
+                    height: 190px;
+                    border: 3px solid rgba(255, 255, 255, 0.75);
+                    border-radius: 999px;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                }
+                .shot {
+                    position: absolute;
+                    width: 14px;
+                    height: 14px;
+                    border-radius: 999px;
+                    background: var(--paint);
+                    box-shadow: 0 0 0 8px rgba(23, 78, 166, 0.16);
+                    animation: pop 900ms ease both;
+                }
+                .shot:nth-child(1) { left: 22%; top: 30%; }
+                .shot:nth-child(2) { left: 68%; top: 42%; animation-delay: 120ms; }
+                .shot:nth-child(3) { left: 42%; top: 68%; animation-delay: 240ms; }
+                .shot:nth-child(4) { left: 78%; top: 72%; animation-delay: 360ms; }
+                .links {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 14px;
+                    margin-top: 22px;
+                }
+                a {
+                    color: var(--paint);
+                    font-weight: 700;
+                    text-decoration: none;
+                }
+                .link-card {
+                    display: block;
+                    border: 1px solid var(--line);
+                    border-radius: 18px;
+                    background: #fff;
+                    padding: 16px;
+                }
+                @keyframes pop {
+                    from { opacity: 0; transform: scale(0.3); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                @media (max-width: 780px) {
+                    .hero, .metric-grid, .links { grid-template-columns: 1fr; }
+                    main { padding: 24px 0; }
+                }
+            </style>
+        </head>
+        <body>
+            <main>
+                <section class="hero">
+                    <div class="card">
+                        <h2>Deployed Data Engineering Project</h2>
+                        <h1>NBA Data Pipeline</h1>
+                        <p>
+                            A FastAPI + PostgreSQL pipeline that ingests NBA game data,
+                            tracks pipeline runs, and serves analytics-ready endpoints
+                            for team summaries, trends, leaders, and filtered game search.
+                        </p>
+                        <div class="metric-grid">
+                            <div class="metric"><strong>2,802</strong><span>team-game rows loaded</span></div>
+                            <div class="metric"><strong>6</strong><span>API endpoints</span></div>
+                            <div class="metric"><strong>1</strong><span>Render deployment</span></div>
+                        </div>
+                        <div class="links">
+                            <a class="link-card" href="/docs">Interactive API Docs</a>
+                            <a class="link-card" href="/games?limit=5">Recent Games</a>
+                            <a class="link-card" href="/analytics/team-rankings?metric=points&limit=10">Team Rankings</a>
+                            <a class="link-card" href="/teams/Indiana%20Pacers/trends?last_n=5">Pacers Trend Analysis</a>
+                            <a class="link-card" href="/pipeline/runs?limit=3">Pipeline Runs</a>
+                        </div>
+                    </div>
+                    <div class="card court" aria-label="Basketball court visualization">
+                        <span class="shot"></span>
+                        <span class="shot"></span>
+                        <span class="shot"></span>
+                        <span class="shot"></span>
+                    </div>
+                </section>
+            </main>
+        </body>
+        </html>
+        """
+    )
 
 @router.get("/health")
 def health():
@@ -161,6 +348,48 @@ def scoring_leaders(db: Session = Depends(get_db)):
             "avg_points": round(float(r.avg_points), 2)
         }
         for r in results
+    ]
+
+
+@router.get("/analytics/team-rankings")
+def team_rankings(
+    metric: str = Query(default="points", pattern="^(points|rebounds|assists|fg_pct|fg3_pct)$"),
+    limit: int = Query(default=10, ge=1, le=30),
+    db: Session = Depends(get_db),
+):
+    metric_columns = {
+        "points": Game.points,
+        "rebounds": Game.rebounds,
+        "assists": Game.assists,
+        "fg_pct": Game.fg_pct,
+        "fg3_pct": Game.fg3_pct,
+    }
+    metric_column = metric_columns[metric]
+    avg_metric = func.avg(metric_column).label("average")
+
+    results = (
+        db.query(
+            Game.team,
+            func.count(Game.id).label("games_played"),
+            avg_metric,
+            func.sum(case((Game.wl == "W", 1), else_=0)).label("wins"),
+        )
+        .group_by(Game.team)
+        .order_by(avg_metric.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "rank": index + 1,
+            "team": row.team,
+            "metric": metric,
+            "average": round(float(row.average), 3) if row.average is not None else None,
+            "games_played": row.games_played,
+            "wins": int(row.wins or 0),
+        }
+        for index, row in enumerate(results)
     ]
 
 
