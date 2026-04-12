@@ -9,6 +9,44 @@ from app.db.models import Game, PipelineRun
 
 router = APIRouter()
 
+NBA_TEAMS = {
+    "Atlanta Hawks",
+    "Boston Celtics",
+    "Brooklyn Nets",
+    "Charlotte Hornets",
+    "Chicago Bulls",
+    "Cleveland Cavaliers",
+    "Dallas Mavericks",
+    "Denver Nuggets",
+    "Detroit Pistons",
+    "Golden State Warriors",
+    "Houston Rockets",
+    "Indiana Pacers",
+    "LA Clippers",
+    "Los Angeles Lakers",
+    "Memphis Grizzlies",
+    "Miami Heat",
+    "Milwaukee Bucks",
+    "Minnesota Timberwolves",
+    "New Orleans Pelicans",
+    "New York Knicks",
+    "Oklahoma City Thunder",
+    "Orlando Magic",
+    "Philadelphia 76ers",
+    "Phoenix Suns",
+    "Portland Trail Blazers",
+    "Sacramento Kings",
+    "San Antonio Spurs",
+    "Toronto Raptors",
+    "Utah Jazz",
+    "Washington Wizards",
+}
+
+
+def nba_team_query(query):
+    return query.filter(Game.team.in_(NBA_TEAMS))
+
+
 @router.get("/")
 def home():
     return HTMLResponse(
@@ -368,13 +406,15 @@ def team_rankings(
     metric_column = metric_columns[metric]
     avg_metric = func.avg(metric_column).label("average")
 
-    results = (
-        db.query(
+    query = db.query(
             Game.team,
             func.count(Game.id).label("games_played"),
             avg_metric,
             func.sum(case((Game.wl == "W", 1), else_=0)).label("wins"),
         )
+
+    results = (
+        nba_team_query(query)
         .group_by(Game.team)
         .order_by(avg_metric.desc())
         .limit(limit)
@@ -399,6 +439,16 @@ def data_quality_summary(db: Session = Depends(get_db)):
     total_rows = db.query(func.count(Game.id)).scalar()
     unique_games = db.query(func.count(func.distinct(Game.game_id))).scalar()
     unique_teams = db.query(func.count(func.distinct(Game.team))).scalar()
+    official_nba_rows = nba_team_query(db.query(func.count(Game.id))).scalar()
+    official_nba_teams = nba_team_query(db.query(func.count(func.distinct(Game.team)))).scalar()
+    non_nba_teams = [
+        row.team
+        for row in db.query(Game.team)
+        .filter(~Game.team.in_(NBA_TEAMS))
+        .group_by(Game.team)
+        .order_by(Game.team)
+        .all()
+    ]
     min_date, max_date = db.query(
         func.min(Game.game_date),
         func.max(Game.game_date),
@@ -422,18 +472,22 @@ def data_quality_summary(db: Session = Depends(get_db)):
         )
         .scalar()
     )
+    status = "fail" if duplicate_rows else "warning" if non_nba_teams else "pass"
 
     return {
         "total_team_game_rows": total_rows,
         "unique_games": unique_games,
         "unique_teams": unique_teams,
+        "official_nba_team_rows": official_nba_rows,
+        "official_nba_teams": official_nba_teams,
+        "non_nba_or_event_teams": non_nba_teams,
         "date_range": {
             "start": min_date,
             "end": max_date,
         },
         "duplicate_game_team_rows": duplicate_rows,
         "rows_missing_core_stats": null_stat_rows,
-        "status": "pass" if duplicate_rows == 0 else "fail",
+        "status": status,
     }
 
 
@@ -441,14 +495,11 @@ def data_quality_summary(db: Session = Depends(get_db)):
 def dashboard(db: Session = Depends(get_db)):
     top_scoring_teams = team_rankings(metric="points", limit=8, db=db)
     three_point_teams = team_rankings(metric="fg3_pct", limit=5, db=db)
-    recent_games = get_games(
-        limit=8,
-        team=None,
-        season=None,
-        start_date=None,
-        end_date=None,
-        result=None,
-        db=db,
+    recent_games = (
+        nba_team_query(db.query(Game))
+        .order_by(Game.game_date.desc(), Game.game_id.desc(), Game.team_id.asc())
+        .limit(8)
+        .all()
     )
     latest_run = get_pipeline_runs(limit=1, db=db)
 
@@ -472,11 +523,11 @@ def dashboard(db: Session = Depends(get_db)):
     game_rows = "\n".join(
         f"""
         <tr>
-            <td>{escape(game["game_date"])}</td>
-            <td>{escape(game["team"])}</td>
-            <td>{escape(game["opponent"])}</td>
-            <td>{escape(game["wl"] or "")}</td>
-            <td>{game["points"]}</td>
+            <td>{escape(game.game_date)}</td>
+            <td>{escape(game.team)}</td>
+            <td>{escape(game.opponent)}</td>
+            <td>{escape(game.wl or "")}</td>
+            <td>{game.points}</td>
         </tr>
         """
         for game in recent_games
