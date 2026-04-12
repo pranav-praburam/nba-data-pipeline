@@ -1,15 +1,50 @@
 # NBA Data Pipeline
 
-A personal project that ingests, processes, and serves NBA data through a deployed API.
+A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Docker, and Render. The project ingests real NBA game data, stores it in Postgres, exposes analytics endpoints, tracks ingestion runs, and includes a simple live dashboard.
 
-## Current Features
+## Live Demo
 
-- FastAPI backend with modular routes
-- PostgreSQL storage via SQLAlchemy
-- NBA game ingestion using `nba_api`
-- Idempotent game loads with incremental ingestion
-- Pipeline run tracking for observability
-- Analytics endpoints for team summaries, leaders, and recent trends
+- Dashboard: https://nba-data-pipeline-api.onrender.com/dashboard
+- API docs: https://nba-data-pipeline-api.onrender.com/docs
+- Health check: https://nba-data-pipeline-api.onrender.com/health
+- Recent games: https://nba-data-pipeline-api.onrender.com/games?limit=5
+- Team rankings: https://nba-data-pipeline-api.onrender.com/analytics/team-rankings?metric=points&limit=10
+- Data quality: https://nba-data-pipeline-api.onrender.com/data-quality/summary
+
+## What This Project Demonstrates
+
+- Backend API development with FastAPI
+- Relational modeling with PostgreSQL and SQLAlchemy
+- Real data ingestion from `nba_api`
+- Idempotent loading with `(game_id, team_id)` uniqueness
+- Incremental ingestion based on latest ingested game date
+- Pipeline observability with a `pipeline_runs` table
+- Dockerized deployment
+- Cloud deployment with Render and managed Postgres
+- Analytics endpoints and a live HTML dashboard
+
+## Architecture
+
+```text
+nba_api
+  -> ingest_games.py
+  -> PostgreSQL games + pipeline_runs tables
+  -> FastAPI analytics endpoints
+  -> Render-hosted API + dashboard
+```
+
+## API Endpoints
+
+- `GET /health`
+- `GET /games?limit=5`
+- `GET /games?team=Indiana&result=W&limit=5`
+- `GET /teams/Indiana Pacers/summary`
+- `GET /teams/Indiana Pacers/trends?last_n=5`
+- `GET /leaders/points`
+- `GET /analytics/team-rankings?metric=points&limit=10`
+- `GET /data-quality/summary`
+- `GET /pipeline/runs?limit=3`
+- `GET /dashboard`
 
 ## Local Run
 
@@ -20,9 +55,34 @@ source /Users/lalitha/nba-data-pipeline/venv/bin/activate
 uvicorn main:app --reload
 ```
 
+Expected result:
+
+- `http://localhost:8000/health` returns `{"status":"ok"}`
+- `http://localhost:8000/dashboard` shows the analytics dashboard
+
+## Ingestion
+
+Run a normal incremental load inside the virtual environment:
+
+```bash
+python ingest_games.py 2024-25
+```
+
+Run a full refresh-style load that still stays idempotent:
+
+```bash
+python ingest_games.py 2024-25 --full-refresh
+```
+
+Expected result:
+
+- If new games exist, rows are inserted into `games`
+- If data already exists, duplicates are skipped
+- Every run is recorded in `pipeline_runs`
+
 ## Docker Run
 
-Build the image:
+Build the image outside the virtual environment:
 
 ```bash
 docker build -t nba-data-pipeline .
@@ -34,55 +94,34 @@ Run the API container:
 docker run --env-file .env -p 8000:8000 nba-data-pipeline
 ```
 
-If your PostgreSQL database is running on your host machine, use a host-accessible connection string in `.env` for Docker deployment. On many local setups that means replacing `localhost` with `host.docker.internal` and explicitly setting the database username.
-
-Example:
+If PostgreSQL is running on your Mac host, use a Docker-accessible connection string:
 
 ```env
 DATABASE_URL=postgresql://lalitha@host.docker.internal/nba_pipeline
 ```
 
-## Demo Endpoints
+Expected result:
 
-- `/games?limit=5`
-- `/games?team=Indiana&result=W&limit=5`
-- `/teams/Indiana Pacers/summary`
-- `/teams/Indiana Pacers/trends?last_n=5`
-- `/leaders/points`
-- `/pipeline/runs`
+- `http://localhost:8000/health` returns `{"status":"ok"}`
 
-## Deployment Direction
+## Render Deployment
 
-The project is now containerized, which makes it straightforward to deploy to platforms that support Docker-based web services. For a resume project, the cleanest next deployment path is:
-
-1. Provision a managed PostgreSQL database
-2. Deploy this FastAPI app from the `Dockerfile`
-3. Set `DATABASE_URL` in the deployment platform
-4. Run ingestion against the deployed database on a schedule
-
-## Render Deploy
-
-This repo includes a `render.yaml` Blueprint for a simple Render deployment:
+This repo includes `render.yaml`, which defines:
 
 - a Docker-based FastAPI web service
 - a managed Render Postgres database
-- automatic wiring of `DATABASE_URL` from the database to the web service
+- automatic `DATABASE_URL` wiring from the database to the web service
 
-### Deploy steps
+After a successful Render deploy, the production database starts empty. Populate it by running ingestion against the Render external database URL.
 
-1. Push this repo to GitHub
-2. Sign in to Render
-3. Click `New` -> `Blueprint`
-4. Connect this GitHub repo
-5. Select the `main` branch
-6. Review the `render.yaml` resources and click deploy
+## Resume Summary
 
-After deploy finishes, open:
+Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, Docker, and Render. Implemented idempotent and incremental ingestion from `nba_api`, pipeline run tracking, analytics endpoints, and a live dashboard backed by real NBA game data.
 
-- `/health`
-- `/docs`
-- `/games?limit=5`
+## Future Improvements
 
-### Important note
-
-Your deployed database will start empty. After the web service is live, run ingestion against the deployed `DATABASE_URL` to populate it with NBA data.
+- Add scheduled ingestion for automatic daily updates
+- Add data quality checks for row counts, nulls, and duplicate keys
+- Add a richer frontend dashboard with interactive charts
+- Add simple prediction endpoints using recent team form
+- Add automated tests and CI checks

@@ -394,6 +394,49 @@ def team_rankings(
     ]
 
 
+@router.get("/data-quality/summary")
+def data_quality_summary(db: Session = Depends(get_db)):
+    total_rows = db.query(func.count(Game.id)).scalar()
+    unique_games = db.query(func.count(func.distinct(Game.game_id))).scalar()
+    unique_teams = db.query(func.count(func.distinct(Game.team))).scalar()
+    min_date, max_date = db.query(
+        func.min(Game.game_date),
+        func.max(Game.game_date),
+    ).one()
+    duplicate_rows = (
+        db.query(
+            Game.game_id,
+            Game.team_id,
+            func.count(Game.id).label("row_count"),
+        )
+        .group_by(Game.game_id, Game.team_id)
+        .having(func.count(Game.id) > 1)
+        .count()
+    )
+    null_stat_rows = (
+        db.query(func.count(Game.id))
+        .filter(
+            (Game.points.is_(None))
+            | (Game.rebounds.is_(None))
+            | (Game.assists.is_(None))
+        )
+        .scalar()
+    )
+
+    return {
+        "total_team_game_rows": total_rows,
+        "unique_games": unique_games,
+        "unique_teams": unique_teams,
+        "date_range": {
+            "start": min_date,
+            "end": max_date,
+        },
+        "duplicate_game_team_rows": duplicate_rows,
+        "rows_missing_core_stats": null_stat_rows,
+        "status": "pass" if duplicate_rows == 0 else "fail",
+    }
+
+
 @router.get("/dashboard")
 def dashboard(db: Session = Depends(get_db)):
     top_scoring_teams = team_rankings(metric="points", limit=8, db=db)
