@@ -24,6 +24,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - Dockerized deployment
 - Cloud deployment with Render and managed Postgres
 - Analytics endpoints and a live HTML dashboard
+- Automated endpoint tests with GitHub Actions CI
 
 ## Architecture
 
@@ -129,4 +130,4 @@ Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, D
 - Add data quality checks for row counts, nulls, and duplicate keys
 - Add a richer frontend dashboard with interactive charts
 - Replace the heuristic prediction endpoint with a trained model
-- Add automated tests and CI checks
+- Expand CI to include linting and deployment smoke tests
