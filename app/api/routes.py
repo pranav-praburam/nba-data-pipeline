@@ -585,6 +585,23 @@ def dashboard(db: Session = Depends(get_db)):
                 }}
                 .stat strong {{ display: block; font-size: 2rem; letter-spacing: -0.05em; }}
                 .stat span {{ color: var(--muted); }}
+                .prediction-card {{
+                    margin-top: 16px;
+                    background: linear-gradient(135deg, #17202a, #174ea6);
+                    color: #fff;
+                }}
+                .prediction-card p {{
+                    color: rgba(255, 255, 255, 0.78);
+                    line-height: 1.55;
+                }}
+                .prediction-card a {{
+                    display: inline-block;
+                    color: #17202a;
+                    background: var(--court);
+                    border-radius: 999px;
+                    padding: 10px 14px;
+                    margin-top: 6px;
+                }}
                 ul {{ list-style: none; margin: 0; padding: 0; }}
                 li {{
                     display: flex;
@@ -618,6 +635,7 @@ def dashboard(db: Session = Depends(get_db)):
                     <nav class="nav">
                         <a href="/">Home</a>
                         <a href="/docs">API Docs</a>
+                        <a href="/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10">Prediction</a>
                         <a href="/pipeline/runs?limit=3">Pipeline Runs</a>
                     </nav>
                 </div>
@@ -640,6 +658,16 @@ def dashboard(db: Session = Depends(get_db)):
                         <div class="card">
                             <h2>Top 3PT% Teams</h2>
                             <ul>{three_point_rows}</ul>
+                        </div>
+                        <div class="card prediction-card">
+                            <h2>Heuristic Matchup Prediction</h2>
+                            <p>
+                                A transparent recent-form score, not a trained ML model.
+                                Useful for showing how pipeline data can power model-ready features.
+                            </p>
+                            <a href="/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10">
+                                Pacers vs Thunder
+                            </a>
                         </div>
                     </aside>
 
