@@ -4,85 +4,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy import case, func
 from typing import Optional
 from html import escape
+from app.api.constants import NBA_TEAMS
+from app.api.query_helpers import (
+    latest_season_year,
+    nba_team_query,
+    normalize_season_year,
+    season_display_name,
+    season_query,
+)
 from app.db.database import get_db
 from app.db.models import Game, PipelineRun
+from app.services.predictions import recent_team_profile
 
 router = APIRouter()
-
-NBA_TEAMS = {
-    "Atlanta Hawks",
-    "Boston Celtics",
-    "Brooklyn Nets",
-    "Charlotte Hornets",
-    "Chicago Bulls",
-    "Cleveland Cavaliers",
-    "Dallas Mavericks",
-    "Denver Nuggets",
-    "Detroit Pistons",
-    "Golden State Warriors",
-    "Houston Rockets",
-    "Indiana Pacers",
-    "LA Clippers",
-    "Los Angeles Lakers",
-    "Memphis Grizzlies",
-    "Miami Heat",
-    "Milwaukee Bucks",
-    "Minnesota Timberwolves",
-    "New Orleans Pelicans",
-    "New York Knicks",
-    "Oklahoma City Thunder",
-    "Orlando Magic",
-    "Philadelphia 76ers",
-    "Phoenix Suns",
-    "Portland Trail Blazers",
-    "Sacramento Kings",
-    "San Antonio Spurs",
-    "Toronto Raptors",
-    "Utah Jazz",
-    "Washington Wizards",
-}
-
-
-def nba_team_query(query):
-    return query.filter(Game.team.in_(NBA_TEAMS))
-
-
-def normalize_season_year(season: Optional[str]) -> Optional[str]:
-    if not season:
-        return None
-    if "-" in season:
-        return season.split("-", 1)[0]
-    if len(season) == 5 and season[1:].isdigit():
-        return season[1:]
-    if len(season) == 4 and season.isdigit():
-        return season
-    return None
-
-
-def season_query(query, season: Optional[str]):
-    season_year = normalize_season_year(season)
-    if season_year:
-        return query.filter(Game.season.like(f"%{season_year}"))
-    if season:
-        return query.filter(Game.season == season)
-    return query
-
-
-def latest_season_year(db: Session) -> Optional[str]:
-    season_ids = [row[0] for row in db.query(Game.season).distinct().all()]
-    season_years = [
-        season_id[1:]
-        for season_id in season_ids
-        if season_id and len(season_id) == 5 and season_id[1:].isdigit()
-    ]
-    return max(season_years) if season_years else None
-
-
-def season_display_name(season_year: Optional[str]) -> str:
-    if not season_year:
-        return "all seasons"
-    return f"{season_year}-{str(int(season_year[-2:]) + 1).zfill(2)}"
-
 
 @router.get("/")
 def home():
@@ -783,49 +717,6 @@ def dashboard(
         </html>
         """
     )
-
-
-def recent_team_profile(db: Session, team_name: str, last_n: int):
-    games = (
-        db.query(Game)
-        .filter(Game.team == team_name)
-        .order_by(Game.game_date.desc(), Game.game_id.desc())
-        .limit(last_n)
-        .all()
-    )
-
-    if not games:
-        return None
-
-    wins = sum(1 for game in games if game.wl == "W")
-    avg_points = sum(game.points for game in games) / len(games)
-    avg_rebounds = sum((game.rebounds or 0) for game in games) / len(games)
-    avg_assists = sum((game.assists or 0) for game in games) / len(games)
-    avg_fg_pct = sum((game.fg_pct or 0) for game in games) / len(games)
-    avg_fg3_pct = sum((game.fg3_pct or 0) for game in games) / len(games)
-
-    score = (
-        (wins / len(games)) * 45
-        + avg_points * 0.35
-        + avg_rebounds * 0.08
-        + avg_assists * 0.15
-        + avg_fg_pct * 18
-        + avg_fg3_pct * 12
-    )
-
-    return {
-        "team": team_name,
-        "games_used": len(games),
-        "wins": wins,
-        "losses": len(games) - wins,
-        "win_rate": round(wins / len(games), 3),
-        "avg_points": round(avg_points, 2),
-        "avg_rebounds": round(avg_rebounds, 2),
-        "avg_assists": round(avg_assists, 2),
-        "avg_fg_pct": round(avg_fg_pct, 3),
-        "avg_fg3_pct": round(avg_fg3_pct, 3),
-        "form_score": round(score, 3),
-    }
 
 
 @router.get("/predictions/matchup")
