@@ -10,6 +10,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - Recent games: https://nba-data-pipeline-api.onrender.com/games?limit=5
 - Team rankings: https://nba-data-pipeline-api.onrender.com/analytics/team-rankings?metric=points&limit=10
 - Data quality: https://nba-data-pipeline-api.onrender.com/data-quality/summary
+- Matchup prediction: https://nba-data-pipeline-api.onrender.com/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
 
 ## What This Project Demonstrates
 
@@ -43,6 +44,7 @@ nba_api
 - `GET /leaders/points`
 - `GET /analytics/team-rankings?metric=points&limit=10`
 - `GET /data-quality/summary`
+- `GET /predictions/matchup?team_a=Indiana Pacers&team_b=Oklahoma City Thunder&last_n=10`
 - `GET /pipeline/runs?limit=3`
 - `GET /dashboard`
 
@@ -123,5 +125,5 @@ Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, D
 - Add scheduled ingestion for automatic daily updates
 - Add data quality checks for row counts, nulls, and duplicate keys
 - Add a richer frontend dashboard with interactive charts
-- Add simple prediction endpoints using recent team form
+- Replace the heuristic prediction endpoint with a trained model
 - Add automated tests and CI checks

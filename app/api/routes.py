@@ -661,6 +661,94 @@ def dashboard(db: Session = Depends(get_db)):
     )
 
 
+def recent_team_profile(db: Session, team_name: str, last_n: int):
+    games = (
+        db.query(Game)
+        .filter(Game.team == team_name)
+        .order_by(Game.game_date.desc(), Game.game_id.desc())
+        .limit(last_n)
+        .all()
+    )
+
+    if not games:
+        return None
+
+    wins = sum(1 for game in games if game.wl == "W")
+    avg_points = sum(game.points for game in games) / len(games)
+    avg_rebounds = sum((game.rebounds or 0) for game in games) / len(games)
+    avg_assists = sum((game.assists or 0) for game in games) / len(games)
+    avg_fg_pct = sum((game.fg_pct or 0) for game in games) / len(games)
+    avg_fg3_pct = sum((game.fg3_pct or 0) for game in games) / len(games)
+
+    score = (
+        (wins / len(games)) * 45
+        + avg_points * 0.35
+        + avg_rebounds * 0.08
+        + avg_assists * 0.15
+        + avg_fg_pct * 18
+        + avg_fg3_pct * 12
+    )
+
+    return {
+        "team": team_name,
+        "games_used": len(games),
+        "wins": wins,
+        "losses": len(games) - wins,
+        "win_rate": round(wins / len(games), 3),
+        "avg_points": round(avg_points, 2),
+        "avg_rebounds": round(avg_rebounds, 2),
+        "avg_assists": round(avg_assists, 2),
+        "avg_fg_pct": round(avg_fg_pct, 3),
+        "avg_fg3_pct": round(avg_fg3_pct, 3),
+        "form_score": round(score, 3),
+    }
+
+
+@router.get("/predictions/matchup")
+def matchup_prediction(
+    team_a: str,
+    team_b: str,
+    last_n: int = Query(default=10, ge=3, le=25),
+    db: Session = Depends(get_db),
+):
+    team_a_profile = recent_team_profile(db, team_a, last_n)
+    team_b_profile = recent_team_profile(db, team_b, last_n)
+
+    if not team_a_profile or not team_b_profile:
+        missing = []
+        if not team_a_profile:
+            missing.append(team_a)
+        if not team_b_profile:
+            missing.append(team_b)
+        raise HTTPException(
+            status_code=404,
+            detail=f"No recent games found for: {', '.join(missing)}",
+        )
+
+    score_a = team_a_profile["form_score"]
+    score_b = team_b_profile["form_score"]
+    total_score = score_a + score_b
+    team_a_probability = score_a / total_score if total_score else 0.5
+    team_b_probability = 1 - team_a_probability
+
+    favorite = team_a if team_a_probability >= team_b_probability else team_b
+
+    return {
+        "model_type": "heuristic_recent_form",
+        "disclaimer": "This is not a trained ML model. It is a transparent heuristic based on recent wins, scoring, rebounding, assists, and shooting efficiency.",
+        "last_n_games": last_n,
+        "favorite": favorite,
+        "win_probability": {
+            team_a: round(team_a_probability, 3),
+            team_b: round(team_b_probability, 3),
+        },
+        "team_profiles": [
+            team_a_profile,
+            team_b_profile,
+        ],
+    }
+
+
 @router.get("/pipeline/runs")
 def get_pipeline_runs(limit: int = 10, db: Session = Depends(get_db)):
     runs = (
