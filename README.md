@@ -8,7 +8,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - API docs: https://nba-data-pipeline-api.onrender.com/docs
 - Health check: https://nba-data-pipeline-api.onrender.com/health
 - Recent games: https://nba-data-pipeline-api.onrender.com/games?limit=5
-- Team rankings: https://nba-data-pipeline-api.onrender.com/analytics/team-rankings?metric=points&limit=10
+- Team rankings: https://nba-data-pipeline-api.onrender.com/analytics/team-rankings?metric=points&limit=10&season=2025-26
 - Data quality: https://nba-data-pipeline-api.onrender.com/data-quality/summary
 - Matchup prediction: https://nba-data-pipeline-api.onrender.com/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
 
@@ -20,6 +20,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - Idempotent loading with `(game_id, team_id)` uniqueness
 - Incremental ingestion based on latest ingested game date
 - Pipeline observability with a `pipeline_runs` table
+- Current-season and historical-season filtering
 - Dockerized deployment
 - Cloud deployment with Render and managed Postgres
 - Analytics endpoints and a live HTML dashboard
@@ -42,7 +43,7 @@ nba_api
 - `GET /teams/Indiana Pacers/summary`
 - `GET /teams/Indiana Pacers/trends?last_n=5`
 - `GET /leaders/points`
-- `GET /analytics/team-rankings?metric=points&limit=10`
+- `GET /analytics/team-rankings?metric=points&limit=10&season=2025-26`
 - `GET /data-quality/summary`
 - `GET /predictions/matchup?team_a=Indiana Pacers&team_b=Oklahoma City Thunder&last_n=10`
 - `GET /pipeline/runs?limit=3`
@@ -81,6 +82,8 @@ Expected result:
 - If new games exist, rows are inserted into `games`
 - If data already exists, duplicates are skipped
 - Every run is recorded in `pipeline_runs`
+
+The project currently supports both the 2024-25 and 2025-26 seasons. The dashboard defaults to the latest loaded season.
 
 ## Docker Run
 

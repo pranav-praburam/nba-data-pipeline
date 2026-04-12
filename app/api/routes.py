@@ -47,6 +47,43 @@ def nba_team_query(query):
     return query.filter(Game.team.in_(NBA_TEAMS))
 
 
+def normalize_season_year(season: Optional[str]) -> Optional[str]:
+    if not season:
+        return None
+    if "-" in season:
+        return season.split("-", 1)[0]
+    if len(season) == 5 and season[1:].isdigit():
+        return season[1:]
+    if len(season) == 4 and season.isdigit():
+        return season
+    return None
+
+
+def season_query(query, season: Optional[str]):
+    season_year = normalize_season_year(season)
+    if season_year:
+        return query.filter(Game.season.like(f"%{season_year}"))
+    if season:
+        return query.filter(Game.season == season)
+    return query
+
+
+def latest_season_year(db: Session) -> Optional[str]:
+    season_ids = [row[0] for row in db.query(Game.season).distinct().all()]
+    season_years = [
+        season_id[1:]
+        for season_id in season_ids
+        if season_id and len(season_id) == 5 and season_id[1:].isdigit()
+    ]
+    return max(season_years) if season_years else None
+
+
+def season_display_name(season_year: Optional[str]) -> str:
+    if not season_year:
+        return "all seasons"
+    return f"{season_year}-{str(int(season_year[-2:]) + 1).zfill(2)}"
+
+
 @router.get("/")
 def home():
     return HTMLResponse(
@@ -248,7 +285,7 @@ def get_games(
     season: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    result: Optional[str] = Query(default=None, pattern="^(W|L)$"),
+    result: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(Game)
@@ -256,8 +293,7 @@ def get_games(
     if team:
         query = query.filter(Game.team.ilike(f"%{team}%"))
 
-    if season:
-        query = query.filter(Game.season == season)
+    query = season_query(query, season)
 
     if start_date:
         if len(start_date) != 10:
@@ -270,6 +306,8 @@ def get_games(
         query = query.filter(Game.game_date <= end_date)
 
     if result:
+        if result not in {"W", "L"}:
+            raise HTTPException(status_code=400, detail="result must be W or L")
         query = query.filter(Game.wl == result)
 
     games = (
@@ -394,6 +432,7 @@ def scoring_leaders(db: Session = Depends(get_db)):
 def team_rankings(
     metric: str = Query(default="points", pattern="^(points|rebounds|assists|fg_pct|fg3_pct)$"),
     limit: int = Query(default=10, ge=1, le=30),
+    season: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     metric_columns = {
@@ -414,7 +453,7 @@ def team_rankings(
         )
 
     results = (
-        nba_team_query(query)
+        season_query(nba_team_query(query), season)
         .group_by(Game.team)
         .order_by(avg_metric.desc())
         .limit(limit)
@@ -485,6 +524,7 @@ def data_quality_summary(db: Session = Depends(get_db)):
             "start": min_date,
             "end": max_date,
         },
+        "latest_season": season_display_name(latest_season_year(db)),
         "duplicate_game_team_rows": duplicate_rows,
         "rows_missing_core_stats": null_stat_rows,
         "status": status,
@@ -492,11 +532,16 @@ def data_quality_summary(db: Session = Depends(get_db)):
 
 
 @router.get("/dashboard")
-def dashboard(db: Session = Depends(get_db)):
-    top_scoring_teams = team_rankings(metric="points", limit=8, db=db)
-    three_point_teams = team_rankings(metric="fg3_pct", limit=5, db=db)
+def dashboard(
+    season: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    season_year = normalize_season_year(season) or latest_season_year(db)
+    season_label = season_display_name(season_year)
+    top_scoring_teams = team_rankings(metric="points", limit=8, season=season_year, db=db)
+    three_point_teams = team_rankings(metric="fg3_pct", limit=5, season=season_year, db=db)
     recent_games = (
-        nba_team_query(db.query(Game))
+        season_query(nba_team_query(db.query(Game)), season_year)
         .order_by(Game.game_date.desc(), Game.game_id.desc(), Game.team_id.asc())
         .limit(8)
         .all()
@@ -680,7 +725,7 @@ def dashboard(db: Session = Depends(get_db)):
             <main>
                 <div class="topline">
                     <div>
-                        <div class="eyebrow">Live Database Analytics</div>
+                        <div class="eyebrow">Live Database Analytics | {season_label}</div>
                         <h1>NBA Team Dashboard</h1>
                     </div>
                     <nav class="nav">
