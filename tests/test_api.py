@@ -190,3 +190,19 @@ def test_dashboard_renders_latest_season_view_without_non_nba_teams():
     assert "NBA Team Dashboard" in response.text
     assert "Live Database Analytics | 2025-26" in response.text
     assert "Ratiopharm Ulm" not in response.text
+
+
+def test_admin_ingestion_requires_configured_api_key(monkeypatch):
+    monkeypatch.delenv("INGEST_API_KEY", raising=False)
+
+    response = client.post("/admin/ingest")
+
+    assert response.status_code == 503
+
+
+def test_admin_ingestion_rejects_invalid_api_key(monkeypatch):
+    monkeypatch.setenv("INGEST_API_KEY", "test-secret")
+
+    response = client.post("/admin/ingest", headers={"X-API-Key": "wrong-secret"})
+
+    assert response.status_code == 401

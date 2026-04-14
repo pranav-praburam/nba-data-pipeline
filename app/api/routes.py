@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 from html import escape
+from app.api.admin import router as admin_router
 from app.api.analytics import router as analytics_router
 from app.api.analytics import team_rankings
 from app.api.games import router as games_router
@@ -24,6 +25,7 @@ router.include_router(games_router)
 router.include_router(analytics_router)
 router.include_router(predictions_router)
 router.include_router(pipeline_router)
+router.include_router(admin_router)
 
 @router.get("/")
 def home():

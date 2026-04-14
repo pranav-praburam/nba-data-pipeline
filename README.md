@@ -89,18 +89,26 @@ The project currently supports both the 2024-25 and 2025-26 seasons. The dashboa
 
 ## Scheduled Ingestion
 
-This repo includes `.github/workflows/daily-ingestion.yml`, which runs an incremental current-season ingestion every day at 11:30 UTC and can also be triggered manually from GitHub Actions.
+This repo includes `.github/workflows/daily-ingestion.yml`, which triggers an incremental current-season ingestion every day at 11:30 UTC and can also be triggered manually from GitHub Actions.
+
+The workflow calls the deployed Render API instead of fetching NBA data directly from GitHub Actions. This avoids GitHub runner timeouts against `stats.nba.com` and keeps ingestion close to the deployed database.
+
+Required Render web service environment variable:
+
+```text
+INGEST_API_KEY
+```
 
 Required GitHub repository secret:
 
 ```text
-RENDER_DATABASE_URL
+INGEST_API_KEY
 ```
 
-Use the Render Postgres external database URL as the secret value. The workflow maps that secret to `DATABASE_URL`, installs dependencies, and runs:
+Use the same random secret value in both places. The workflow sends that value as an `X-API-Key` header to:
 
-```bash
-python scripts/run_daily_ingestion.py
+```text
+POST https://nba-data-pipeline-api.onrender.com/admin/ingest?season=2025-26
 ```
 
 Expected result:

@@ -11,6 +11,8 @@ services:
         fromDatabase:
           name: nba-data-pipeline-db
           property: connectionString
+      - key: INGEST_API_KEY
+        sync: false
 
 databases:
   - name: nba-data-pipeline-db
