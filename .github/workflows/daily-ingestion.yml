@@ -12,6 +12,8 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.RENDER_DATABASE_URL }}
       NBA_SEASON: "2025-26"
+      NBA_API_TIMEOUT: "90"
+      NBA_API_RETRIES: "3"
       PYTHONPYCACHEPREFIX: /tmp/pycache
 
     steps:

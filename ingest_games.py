@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import time
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -11,14 +12,34 @@ from app.db.database import Base, SessionLocal, engine
 from app.db.models import Game, PipelineRun
 
 DEFAULT_SEASON = os.getenv("NBA_SEASON", "2025-26")
+NBA_API_TIMEOUT = int(os.getenv("NBA_API_TIMEOUT", "90"))
+NBA_API_RETRIES = int(os.getenv("NBA_API_RETRIES", "3"))
 
 
-def fetch_games_dataframe(season="2024-25"):
-    finder = LeagueGameFinder(
-        season_nullable=season,
-        league_id_nullable="00"
-    )
-    df = finder.get_data_frames()[0]
+def fetch_games_dataframe(season="2024-25", timeout=NBA_API_TIMEOUT, retries=NBA_API_RETRIES):
+    last_error = None
+    for attempt in range(1, retries + 1):
+        try:
+            print(
+                f"Fetching NBA games for {season} "
+                f"(attempt {attempt}/{retries}, timeout={timeout}s)."
+            )
+            finder = LeagueGameFinder(
+                season_nullable=season,
+                league_id_nullable="00",
+                timeout=timeout,
+            )
+            df = finder.get_data_frames()[0]
+            break
+        except Exception as error:
+            last_error = error
+            if attempt == retries:
+                raise
+            sleep_seconds = attempt * 10
+            print(f"NBA API fetch failed: {error}. Retrying in {sleep_seconds}s.")
+            time.sleep(sleep_seconds)
+    else:
+        raise last_error
 
     columns_needed = [
         "GAME_ID", "GAME_DATE", "SEASON_ID",
