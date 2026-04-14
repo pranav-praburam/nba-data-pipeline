@@ -19,6 +19,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - Real data ingestion from `nba_api`
 - Idempotent loading with `(game_id, team_id)` uniqueness
 - Incremental ingestion based on latest ingested game date
+- Scheduled daily ingestion with GitHub Actions
 - Pipeline observability with a `pipeline_runs` table
 - Current-season and historical-season filtering
 - Dockerized deployment
@@ -69,13 +70,13 @@ Expected result:
 Run a normal incremental load inside the virtual environment:
 
 ```bash
-python ingest_games.py 2024-25
+python ingest_games.py 2025-26
 ```
 
 Run a full refresh-style load that still stays idempotent:
 
 ```bash
-python ingest_games.py 2024-25 --full-refresh
+python ingest_games.py 2025-26 --full-refresh
 ```
 
 Expected result:
@@ -85,6 +86,29 @@ Expected result:
 - Every run is recorded in `pipeline_runs`
 
 The project currently supports both the 2024-25 and 2025-26 seasons. The dashboard defaults to the latest loaded season.
+
+## Scheduled Ingestion
+
+This repo includes `.github/workflows/daily-ingestion.yml`, which runs an incremental current-season ingestion every day at 11:30 UTC and can also be triggered manually from GitHub Actions.
+
+Required GitHub repository secret:
+
+```text
+RENDER_DATABASE_URL
+```
+
+Use the Render Postgres external database URL as the secret value. The workflow maps that secret to `DATABASE_URL`, installs dependencies, and runs:
+
+```bash
+python scripts/run_daily_ingestion.py
+```
+
+Expected result:
+
+- New NBA team-game rows are inserted when new games are available
+- Existing rows are skipped by the `(game_id, team_id)` uniqueness rule
+- Every scheduled run is recorded in `pipeline_runs`
+- A failed ingestion exits non-zero so GitHub Actions marks the run as failed
 
 ## Docker Run
 
@@ -122,11 +146,10 @@ After a successful Render deploy, the production database starts empty. Populate
 
 ## Resume Summary
 
-Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, Docker, and Render. Implemented idempotent and incremental ingestion from `nba_api`, pipeline run tracking, analytics endpoints, and a live dashboard backed by real NBA game data.
+Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, and Render. Implemented idempotent incremental ingestion from `nba_api`, scheduled daily refreshes, pipeline run tracking, analytics endpoints, and a live dashboard backed by real NBA game data.
 
 ## Future Improvements
 
-- Add scheduled ingestion for automatic daily updates
 - Add data quality checks for row counts, nulls, and duplicate keys
 - Add a richer frontend dashboard with interactive charts
 - Replace the heuristic prediction endpoint with a trained model

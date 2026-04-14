@@ -1,3 +1,5 @@
+import argparse
+import os
 import sys
 from datetime import datetime, timezone
 
@@ -7,6 +9,9 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
 from app.db.database import Base, SessionLocal, engine
 from app.db.models import Game, PipelineRun
+
+DEFAULT_SEASON = os.getenv("NBA_SEASON", "2025-26")
+
 
 def fetch_games_dataframe(season="2024-25"):
     finder = LeagueGameFinder(
@@ -87,12 +92,12 @@ def record_pipeline_run(
     db.add(run)
 
 def ingest_games(season="2024-25", full_refresh=False):
-    Base.metadata.create_all(bind=engine)
-    df = fetch_games_dataframe(season=season).sort_values(["GAME_DATE", "GAME_ID", "TEAM_ID"])
     db = SessionLocal()
     mode = "full_refresh" if full_refresh else "incremental"
 
     try:
+        Base.metadata.create_all(bind=engine)
+        df = fetch_games_dataframe(season=season).sort_values(["GAME_DATE", "GAME_ID", "TEAM_ID"])
         season_ids = df["SEASON_ID"].astype(str).unique().tolist()
         latest_game_date = None if full_refresh else get_latest_ingested_game_date(db, season_ids)
 
@@ -115,7 +120,14 @@ def ingest_games(season="2024-25", full_refresh=False):
             print(
                 f"No new team-game rows found for season {season} during {scope}."
             )
-            return
+            return {
+                "season": season,
+                "mode": mode,
+                "rows_fetched": 0,
+                "rows_inserted": 0,
+                "rows_skipped": 0,
+                "status": "success",
+            }
 
         records = build_game_records(df)
 
@@ -141,27 +153,62 @@ def ingest_games(season="2024-25", full_refresh=False):
             f"Fetched {len(records)} new team-game rows for season {season}. "
             f"Inserted {inserted_count}, skipped {skipped_count} existing rows."
         )
+        return {
+            "season": season,
+            "mode": mode,
+            "rows_fetched": len(records),
+            "rows_inserted": inserted_count,
+            "rows_skipped": skipped_count,
+            "status": "success",
+        }
 
     except Exception as e:
-        db.rollback()
         error_message = str(e)
-        record_pipeline_run(
-            db=db,
-            season=season,
-            mode=mode,
-            rows_fetched=0,
-            rows_inserted=0,
-            rows_skipped=0,
-            status="failed",
-            error_message=error_message[:2000],
-        )
-        db.commit()
+        try:
+            db.rollback()
+            record_pipeline_run(
+                db=db,
+                season=season,
+                mode=mode,
+                rows_fetched=0,
+                rows_inserted=0,
+                rows_skipped=0,
+                status="failed",
+                error_message=error_message[:2000],
+            )
+            db.commit()
+        except Exception as record_error:
+            db.rollback()
+            print("Could not record failed pipeline run:", record_error)
         print("Error inserting games:", e)
+        return {
+            "season": season,
+            "mode": mode,
+            "rows_fetched": 0,
+            "rows_inserted": 0,
+            "rows_skipped": 0,
+            "status": "failed",
+            "error_message": error_message[:2000],
+        }
 
     finally:
         db.close()
 
 if __name__ == "__main__":
-    season = sys.argv[1] if len(sys.argv) > 1 else "2024-25"
-    full_refresh = "--full-refresh" in sys.argv[2:]
-    ingest_games(season=season, full_refresh=full_refresh)
+    parser = argparse.ArgumentParser(description="Ingest NBA team-game rows.")
+    parser.add_argument(
+        "season",
+        nargs="?",
+        default=DEFAULT_SEASON,
+        help="NBA season to ingest, such as 2025-26.",
+    )
+    parser.add_argument(
+        "--full-refresh",
+        action="store_true",
+        help="Fetch the full season and rely on idempotent upsert logic.",
+    )
+    args = parser.parse_args()
+
+    result = ingest_games(season=args.season, full_refresh=args.full_refresh)
+    if result and result.get("status") == "failed":
+        sys.exit(1)
