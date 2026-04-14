@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timezone
 
 import pandas as pd
-from nba_api.stats.endpoints import LeagueGameFinder
+from nba_api.stats.endpoints import LeagueGameLog
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
 from app.db.database import Base, SessionLocal, engine
@@ -24,9 +24,10 @@ def fetch_games_dataframe(season="2024-25", timeout=NBA_API_TIMEOUT, retries=NBA
                 f"Fetching NBA games for {season} "
                 f"(attempt {attempt}/{retries}, timeout={timeout}s)."
             )
-            finder = LeagueGameFinder(
-                season_nullable=season,
-                league_id_nullable="00",
+            finder = LeagueGameLog(
+                season=season,
+                league_id="00",
+                player_or_team_abbreviation="T",
                 timeout=timeout,
             )
             df = finder.get_data_frames()[0]
