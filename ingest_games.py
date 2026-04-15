@@ -197,13 +197,20 @@ def record_pipeline_run(
     )
     db.add(run)
 
-def ingest_games(season="2024-25", full_refresh=False):
+def ingest_games(season="2024-25", full_refresh=False, source="stats"):
     db = SessionLocal()
     mode = "full_refresh" if full_refresh else "incremental"
 
     try:
         Base.metadata.create_all(bind=engine)
-        df = fetch_games_dataframe(season=season).sort_values(["GAME_DATE", "GAME_ID", "TEAM_ID"])
+        if source == "live":
+            df = fetch_live_scoreboard_dataframe(season=season).sort_values(
+                ["GAME_DATE", "GAME_ID", "TEAM_ID"]
+            )
+        else:
+            df = fetch_games_dataframe(season=season).sort_values(
+                ["GAME_DATE", "GAME_ID", "TEAM_ID"]
+            )
         season_ids = df["SEASON_ID"].astype(str).unique().tolist()
         latest_game_date = (
             None

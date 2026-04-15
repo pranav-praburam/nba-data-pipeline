@@ -195,8 +195,8 @@ def test_dashboard_renders_latest_season_view_without_non_nba_teams():
 def test_admin_ingestion_endpoint_starts_background_job(monkeypatch):
     calls = []
 
-    def fake_ingest_games(season, full_refresh=False):
-        calls.append({"season": season, "full_refresh": full_refresh})
+    def fake_ingest_games(season, full_refresh=False, source="stats"):
+        calls.append({"season": season, "full_refresh": full_refresh, "source": source})
         return {
             "season": season,
             "mode": "incremental",
@@ -213,4 +213,4 @@ def test_admin_ingestion_endpoint_starts_background_job(monkeypatch):
     assert response.status_code == 200
     assert response.json()["status"] == "accepted"
     assert response.json()["trigger"] == "render_api"
-    assert calls == [{"season": "2025-26", "full_refresh": False}]
+    assert calls == [{"season": "2025-26", "full_refresh": False, "source": "live"}]
