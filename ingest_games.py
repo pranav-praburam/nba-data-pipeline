@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timezone
 
 import pandas as pd
+import requests
 from nba_api.stats.endpoints import LeagueGameLog
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
@@ -14,6 +15,13 @@ from app.db.models import Game, PipelineRun
 DEFAULT_SEASON = os.getenv("NBA_SEASON", "2025-26")
 NBA_API_TIMEOUT = int(os.getenv("NBA_API_TIMEOUT", "90"))
 NBA_API_RETRIES = int(os.getenv("NBA_API_RETRIES", "3"))
+
+GAME_COLUMNS = [
+    "GAME_ID", "GAME_DATE", "SEASON_ID",
+    "TEAM_ID", "TEAM_NAME",
+    "MATCHUP", "WL", "PTS", "REB", "AST",
+    "FG_PCT", "FG3_PCT", "FT_PCT", "OPPONENT",
+]
 
 
 def fetch_games_dataframe(season="2024-25", timeout=NBA_API_TIMEOUT, retries=NBA_API_RETRIES):
@@ -35,7 +43,9 @@ def fetch_games_dataframe(season="2024-25", timeout=NBA_API_TIMEOUT, retries=NBA
         except Exception as error:
             last_error = error
             if attempt == retries:
-                raise
+                print(f"NBA stats API unavailable after {retries} attempts: {error}.")
+                print("Falling back to NBA CDN live scoreboard for completed games.")
+                return fetch_live_scoreboard_dataframe(season=season, timeout=timeout)
             sleep_seconds = attempt * 10
             print(f"NBA API fetch failed: {error}. Retrying in {sleep_seconds}s.")
             time.sleep(sleep_seconds)
@@ -58,6 +68,80 @@ def fetch_games_dataframe(season="2024-25", timeout=NBA_API_TIMEOUT, retries=NBA
     df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
 
     return df
+
+
+def empty_games_dataframe():
+    return pd.DataFrame(columns=GAME_COLUMNS)
+
+
+def season_id_for_game(season, game_id):
+    season_year = season.split("-", 1)[0]
+    season_type_prefix = str(game_id)[0] if str(game_id) else "2"
+    return f"{season_type_prefix}{season_year}"
+
+
+def team_full_name(team):
+    return f"{team['teamCity']} {team['teamName']}"
+
+
+def build_live_team_row(game, team_key, opponent_key, season):
+    team = game[team_key]
+    opponent = game[opponent_key]
+    stats = team["statistics"]
+    team_score = int(team["score"])
+    opponent_score = int(opponent["score"])
+    team_code = team["teamTricode"]
+    opponent_code = opponent["teamTricode"]
+    is_home = team_key == "homeTeam"
+
+    return {
+        "GAME_ID": game["gameId"],
+        "GAME_DATE": pd.to_datetime(game["gameEt"].split("T", 1)[0]),
+        "SEASON_ID": season_id_for_game(season, game["gameId"]),
+        "TEAM_ID": int(team["teamId"]),
+        "TEAM_NAME": team_full_name(team),
+        "MATCHUP": (
+            f"{team_code} vs. {opponent_code}"
+            if is_home
+            else f"{team_code} @ {opponent_code}"
+        ),
+        "WL": "W" if team_score > opponent_score else "L",
+        "PTS": stats["points"],
+        "REB": stats["reboundsTotal"],
+        "AST": stats["assists"],
+        "FG_PCT": stats["fieldGoalsPercentage"],
+        "FG3_PCT": stats["threePointersPercentage"],
+        "FT_PCT": stats["freeThrowsPercentage"],
+        "OPPONENT": opponent_code,
+    }
+
+
+def fetch_live_scoreboard_dataframe(season="2025-26", timeout=NBA_API_TIMEOUT):
+    scoreboard_url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
+    response = requests.get(scoreboard_url, timeout=timeout)
+    response.raise_for_status()
+    games = response.json().get("scoreboard", {}).get("games", [])
+
+    rows = []
+    for game_summary in games:
+        if game_summary.get("gameStatus") != 3:
+            continue
+
+        game_id = game_summary["gameId"]
+        boxscore_url = f"https://cdn.nba.com/static/json/liveData/boxscore/boxscore_{game_id}.json"
+        boxscore_response = requests.get(boxscore_url, timeout=timeout)
+        boxscore_response.raise_for_status()
+        game = boxscore_response.json()["game"]
+
+        rows.append(build_live_team_row(game, "homeTeam", "awayTeam", season))
+        rows.append(build_live_team_row(game, "awayTeam", "homeTeam", season))
+
+    if not rows:
+        print("NBA CDN fallback found no completed games to ingest.")
+        return empty_games_dataframe()
+
+    print(f"NBA CDN fallback found {len(rows)} completed team-game rows.")
+    return pd.DataFrame(rows, columns=GAME_COLUMNS)
 
 def get_latest_ingested_game_date(db, season_ids):
     return (
@@ -121,7 +205,11 @@ def ingest_games(season="2024-25", full_refresh=False):
         Base.metadata.create_all(bind=engine)
         df = fetch_games_dataframe(season=season).sort_values(["GAME_DATE", "GAME_ID", "TEAM_ID"])
         season_ids = df["SEASON_ID"].astype(str).unique().tolist()
-        latest_game_date = None if full_refresh else get_latest_ingested_game_date(db, season_ids)
+        latest_game_date = (
+            None
+            if full_refresh or not season_ids
+            else get_latest_ingested_game_date(db, season_ids)
+        )
 
         if latest_game_date:
             latest_game_date = pd.to_datetime(latest_game_date)
