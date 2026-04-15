@@ -192,8 +192,11 @@ def test_dashboard_renders_latest_season_view_without_non_nba_teams():
     assert "Ratiopharm Ulm" not in response.text
 
 
-def test_admin_ingestion_endpoint_exists(monkeypatch):
+def test_admin_ingestion_endpoint_starts_background_job(monkeypatch):
+    calls = []
+
     def fake_ingest_games(season, full_refresh=False):
+        calls.append({"season": season, "full_refresh": full_refresh})
         return {
             "season": season,
             "mode": "incremental",
@@ -208,5 +211,6 @@ def test_admin_ingestion_endpoint_exists(monkeypatch):
     response = client.post("/admin/ingest?season=2025-26")
 
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    assert response.json()["status"] == "accepted"
     assert response.json()["trigger"] == "render_api"
+    assert calls == [{"season": "2025-26", "full_refresh": False}]

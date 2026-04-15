@@ -99,10 +99,11 @@ POST https://nba-data-pipeline-api.onrender.com/admin/ingest?season=2025-26
 
 Expected result:
 
+- GitHub Actions receives an immediate `accepted` response from Render
 - New NBA team-game rows are inserted when new games are available
 - Existing rows are skipped by the `(game_id, team_id)` uniqueness rule
 - Every scheduled run is recorded in `pipeline_runs`
-- A failed ingestion exits non-zero so GitHub Actions marks the run as failed
+- Ingestion success or failure is visible in `/pipeline/runs`
 
 ## Docker Run
 
