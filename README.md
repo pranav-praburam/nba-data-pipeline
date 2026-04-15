@@ -93,20 +93,6 @@ This repo includes `.github/workflows/daily-ingestion.yml`, which triggers an in
 
 The workflow calls the deployed Render API instead of fetching NBA data directly from GitHub Actions. This avoids GitHub runner timeouts against `stats.nba.com` and keeps ingestion close to the deployed database.
 
-Required Render web service environment variable:
-
-```text
-INGEST_API_KEY
-```
-
-Required GitHub repository secret:
-
-```text
-INGEST_API_KEY
-```
-
-Use the same random secret value in both places. The workflow sends that value as an `X-API-Key` header to:
-
 ```text
 POST https://nba-data-pipeline-api.onrender.com/admin/ingest?season=2025-26
 ```

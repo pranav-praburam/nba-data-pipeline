@@ -11,22 +11,12 @@ jobs:
 
     env:
       RENDER_API_URL: "https://nba-data-pipeline-api.onrender.com"
-      INGEST_API_KEY: ${{ secrets.INGEST_API_KEY }}
       NBA_SEASON: "2025-26"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
-      - name: Verify ingestion API key
-        run: |
-          if [ -z "$INGEST_API_KEY" ]; then
-            echo "Missing GitHub secret: INGEST_API_KEY"
-            echo "Add the same INGEST_API_KEY value to GitHub Actions secrets and Render environment variables."
-            exit 1
-          fi
-
       - name: Trigger Render ingestion
         run: |
           curl --fail-with-body --show-error --silent --max-time 240 \
             --request POST \
-            --header "X-API-Key: $INGEST_API_KEY" \
             "$RENDER_API_URL/admin/ingest?season=$NBA_SEASON"

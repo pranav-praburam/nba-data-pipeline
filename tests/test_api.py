@@ -192,17 +192,21 @@ def test_dashboard_renders_latest_season_view_without_non_nba_teams():
     assert "Ratiopharm Ulm" not in response.text
 
 
-def test_admin_ingestion_requires_configured_api_key(monkeypatch):
-    monkeypatch.delenv("INGEST_API_KEY", raising=False)
+def test_admin_ingestion_endpoint_exists(monkeypatch):
+    def fake_ingest_games(season, full_refresh=False):
+        return {
+            "season": season,
+            "mode": "incremental",
+            "rows_fetched": 0,
+            "rows_inserted": 0,
+            "rows_skipped": 0,
+            "status": "success",
+        }
 
-    response = client.post("/admin/ingest")
+    monkeypatch.setattr("ingest_games.ingest_games", fake_ingest_games)
 
-    assert response.status_code == 503
+    response = client.post("/admin/ingest?season=2025-26")
 
-
-def test_admin_ingestion_rejects_invalid_api_key(monkeypatch):
-    monkeypatch.setenv("INGEST_API_KEY", "test-secret")
-
-    response = client.post("/admin/ingest", headers={"X-API-Key": "wrong-secret"})
-
-    assert response.status_code == 401
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert response.json()["trigger"] == "render_api"
