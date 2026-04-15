@@ -1,0 +1,37 @@
+{
+  "accuracy": 0.6514,
+  "roc_auc": 0.7286,
+  "log_loss": 0.6098,
+  "model_type": "logistic_regression",
+  "target": "home_team_win",
+  "rolling_window_games": 10,
+  "feature_columns": [
+    "home_win_rate_l10",
+    "home_avg_points_l10",
+    "home_avg_rebounds_l10",
+    "home_avg_assists_l10",
+    "home_avg_fg_pct_l10",
+    "home_avg_fg3_pct_l10",
+    "away_win_rate_l10",
+    "away_avg_points_l10",
+    "away_avg_rebounds_l10",
+    "away_avg_assists_l10",
+    "away_avg_fg_pct_l10",
+    "away_avg_fg3_pct_l10",
+    "diff_win_rate_l10",
+    "diff_avg_points_l10",
+    "diff_avg_rebounds_l10",
+    "diff_avg_assists_l10",
+    "diff_avg_fg_pct_l10",
+    "diff_avg_fg3_pct_l10"
+  ],
+  "rows_total": 2621,
+  "rows_train": 2096,
+  "rows_test": 525,
+  "date_range": {
+    "start": "2024-10-13",
+    "end": "2026-04-12"
+  },
+  "trained_at": "2026-04-15T23:58:39.231546+00:00",
+  "artifact": "models/win_probability_model.joblib"
+}

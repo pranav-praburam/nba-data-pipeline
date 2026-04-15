@@ -26,6 +26,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - Cloud deployment with Render and managed Postgres
 - Analytics endpoints and a live HTML dashboard
 - Automated endpoint tests with GitHub Actions CI
+- Baseline ML training pipeline for matchup win probability
 
 ## Architecture
 
@@ -105,6 +106,39 @@ Expected result:
 - Every scheduled run is recorded in `pipeline_runs`
 - Ingestion success or failure is visible in `/pipeline/runs`
 
+## ML Baseline Training
+
+Train the first baseline win-probability model inside the virtual environment:
+
+```bash
+python scripts/train_win_model.py
+```
+
+The training script:
+
+- reads official NBA team-game rows from PostgreSQL
+- builds one modeling row per completed matchup
+- creates pre-game rolling 10-game form features for home and away teams
+- splits train/test chronologically to avoid future-data leakage
+- trains a logistic regression classifier
+- saves model artifacts under `models/`
+
+Current local baseline metrics:
+
+```text
+Accuracy: 0.6514
+ROC-AUC: 0.7286
+Log loss: 0.6098
+Training rows: 2,096
+Test rows: 525
+```
+
+Saved artifacts:
+
+- `models/win_probability_model.joblib`
+- `models/win_probability_metrics.json`
+- `models/training_sample.csv`
+
 ## Docker Run
 
 Build the image outside the virtual environment:
@@ -141,11 +175,11 @@ After a successful Render deploy, the production database starts empty. Populate
 
 ## Resume Summary
 
-Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, and Render. Implemented idempotent incremental ingestion from `nba_api`, scheduled daily refreshes, pipeline run tracking, analytics endpoints, and a live dashboard backed by real NBA game data.
+Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, scikit-learn, and Render. Implemented idempotent incremental ingestion from NBA data sources, scheduled daily refreshes, pipeline run tracking, analytics endpoints, baseline ML model training, and a live dashboard backed by real NBA game data.
 
 ## Future Improvements
 
 - Add data quality checks for row counts, nulls, and duplicate keys
 - Add a richer frontend dashboard with interactive charts
-- Replace the heuristic prediction endpoint with a trained model
+- Replace the heuristic prediction endpoint with the trained model artifact
 - Expand CI to include linting and deployment smoke tests
