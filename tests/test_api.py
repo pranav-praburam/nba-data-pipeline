@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.api.routes import router
 from app.db.database import Base, get_db
-from app.db.models import Game, PipelineRun
+from app.db.models import Game, ModelPrediction, PipelineRun
 
 
 engine = create_engine(
@@ -183,6 +183,30 @@ def test_matchup_prediction_returns_ml_result():
     assert set(prediction["win_probability"]) == {"Indiana Pacers", "Oklahoma City Thunder"}
     assert "training_metrics" in prediction
     assert "feature_inputs" in prediction
+    assert "prediction_id" in prediction
+
+    db = TestingSessionLocal()
+    try:
+        saved_prediction = db.query(ModelPrediction).filter_by(id=prediction["prediction_id"]).first()
+        assert saved_prediction is not None
+        assert saved_prediction.model_name == "logistic_regression"
+    finally:
+        db.close()
+
+
+def test_prediction_history_returns_saved_predictions():
+    client.get(
+        "/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=3"
+    )
+
+    response = client.get("/predictions/history?limit=5")
+
+    assert response.status_code == 200
+    history = response.json()
+    assert history
+    assert history[0]["model_name"] == "logistic_regression"
+    assert history[0]["team_a"] == "Indiana Pacers"
+    assert history[0]["team_b"] == "Oklahoma City Thunder"
 
 
 def test_dashboard_renders_latest_season_view_without_non_nba_teams():

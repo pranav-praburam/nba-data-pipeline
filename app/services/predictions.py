@@ -6,7 +6,7 @@ import joblib
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from app.db.models import Game
+from app.db.models import Game, ModelPrediction
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_PATH = PROJECT_ROOT / "models" / "win_probability_model.joblib"
@@ -136,3 +136,23 @@ def predict_matchup_win_probability(db: Session, team_a: str, team_b: str, last_
             team_b_features["profile"],
         ],
     }
+
+
+def record_model_prediction(db: Session, prediction):
+    probabilities = prediction["win_probability"]
+    team_a, team_b = list(probabilities.keys())
+    saved_prediction = ModelPrediction(
+        model_name=prediction["model_type"],
+        model_version=prediction.get("model_version"),
+        team_a=team_a,
+        team_b=team_b,
+        favorite=prediction["favorite"],
+        team_a_probability=probabilities[team_a],
+        team_b_probability=probabilities[team_b],
+        last_n_games=prediction["last_n_games"],
+        feature_inputs=json.dumps(prediction["feature_inputs"], sort_keys=True),
+    )
+    db.add(saved_prediction)
+    db.commit()
+    db.refresh(saved_prediction)
+    return saved_prediction

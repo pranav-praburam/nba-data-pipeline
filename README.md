@@ -65,6 +65,7 @@ nba_api
 - `GET /analytics/team-rankings?metric=points&limit=10&season=2025-26`
 - `GET /data-quality/summary`
 - `GET /predictions/matchup?team_a=Indiana Pacers&team_b=Oklahoma City Thunder&last_n=10`
+- `GET /predictions/history?limit=10`
 - `GET /pipeline/runs?limit=3`
 - `GET /dashboard`
 
@@ -138,6 +139,7 @@ The training script:
 - splits train/test chronologically to avoid future-data leakage
 - trains a logistic regression classifier
 - saves model artifacts under `models/`
+- records served predictions in `model_predictions`
 
 Current local baseline metrics:
 
@@ -204,5 +206,5 @@ Resume bullets:
 
 - Add data quality checks for row counts, nulls, and duplicate keys
 - Add a richer frontend dashboard with interactive charts
-- Add model monitoring and prediction history storage
+- Add model monitoring charts and prediction outcome evaluation
 - Expand CI to include linting and deployment smoke tests

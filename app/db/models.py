@@ -44,3 +44,19 @@ class PipelineRun(Base):
     error_message = Column(Text, nullable=True)
     started_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class ModelPrediction(Base):
+    __tablename__ = "model_predictions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    model_name = Column(String, nullable=False)
+    model_version = Column(String, nullable=True)
+    team_a = Column(String, nullable=False)
+    team_b = Column(String, nullable=False)
+    favorite = Column(String, nullable=False)
+    team_a_probability = Column(Float, nullable=False)
+    team_b_probability = Column(Float, nullable=False)
+    last_n_games = Column(Integer, nullable=False)
+    feature_inputs = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

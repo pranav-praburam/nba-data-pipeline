@@ -489,6 +489,7 @@ def dashboard(
                         <a href="/">Home</a>
                         <a href="/docs">API Docs</a>
                         <a href="/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10">Prediction</a>
+                        <a href="/predictions/history?limit=10">Prediction History</a>
                         <a href="/pipeline/runs?limit=3">Pipeline Runs</a>
                     </nav>
                 </div>
@@ -544,6 +545,9 @@ def dashboard(
                             </p>
                             <a href="{prediction_link}">
                                 Pacers vs Thunder
+                            </a>
+                            <a href="/predictions/history?limit=10">
+                                Prediction History
                             </a>
                         </div>
                     </aside>
