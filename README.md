@@ -19,6 +19,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - Recent games: https://nba-data-pipeline-api.onrender.com/games?limit=5
 - Team rankings: https://nba-data-pipeline-api.onrender.com/analytics/team-rankings?metric=points&limit=10&season=2025-26
 - Data quality: https://nba-data-pipeline-api.onrender.com/data-quality/summary
+- Interactive prediction page: https://nba-data-pipeline-api.onrender.com/predict
 - Matchup prediction: https://nba-data-pipeline-api.onrender.com/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
 
 Recommended demo path:
@@ -64,6 +65,7 @@ nba_api
 - `GET /leaders/points`
 - `GET /analytics/team-rankings?metric=points&limit=10&season=2025-26`
 - `GET /data-quality/summary`
+- `GET /predict?team_a=Bulls&team_b=Lakers`
 - `GET /predictions/matchup?team_a=Indiana Pacers&team_b=Oklahoma City Thunder&last_n=10`
 - `GET /predictions/history?limit=10`
 - `GET /pipeline/runs?limit=3`

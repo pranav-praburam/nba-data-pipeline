@@ -194,6 +194,24 @@ def test_matchup_prediction_returns_ml_result():
         db.close()
 
 
+def test_matchup_prediction_accepts_team_short_names():
+    response = client.get("/predictions/matchup?team_a=Pacers&team_b=Thunder&last_n=3")
+
+    assert response.status_code == 200
+    prediction = response.json()
+    assert set(prediction["win_probability"]) == {"Indiana Pacers", "Oklahoma City Thunder"}
+
+
+def test_prediction_page_renders_interactive_html():
+    response = client.get("/predict?team_a=Pacers&team_b=Thunder&last_n=3")
+
+    assert response.status_code == 200
+    assert "NBA Matchup Predictor" in response.text
+    assert "Predicted Winner" in response.text
+    assert "Indiana Pacers" in response.text
+    assert "Oklahoma City Thunder" in response.text
+
+
 def test_prediction_history_returns_saved_predictions():
     client.get(
         "/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=3"

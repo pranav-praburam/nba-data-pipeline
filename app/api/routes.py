@@ -220,7 +220,7 @@ def home(db: Session = Depends(get_db)):
                         </p>
                         <div class="cta-row">
                             <a class="primary-link" href="/dashboard">Open Live Dashboard</a>
-                            <a class="secondary-link" href="/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10">Try ML Prediction</a>
+                            <a class="secondary-link" href="/predict">Try ML Prediction</a>
                         </div>
                         <div class="metric-grid">
                             <div class="metric"><strong>__TOTAL_ROWS__</strong><span>official team-game rows</span></div>
