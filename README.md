@@ -23,7 +23,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 
 Recommended demo path:
 
-1. Open the dashboard and point out live database metrics, pipeline status, and ML model metrics.
+1. Open the dashboard and point out live database metrics, pipeline status, ML model metrics, and the editable matchup prediction form.
 2. Open `/pipeline/runs?limit=3` to show scheduled ingestion history.
 3. Open `/data-quality/summary` to show automated data quality checks.
 4. Open `/predictions/matchup?...` to show the model-backed prediction response.

@@ -4,6 +4,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import Optional
 from html import escape
+from urllib.parse import quote_plus
 from app.api.admin import router as admin_router
 from app.api.analytics import router as analytics_router
 from app.api.analytics import team_rankings
@@ -226,6 +227,9 @@ def health():
 @router.get("/dashboard")
 def dashboard(
     season: Optional[str] = None,
+    team_a: str = "Indiana Pacers",
+    team_b: str = "Oklahoma City Thunder",
+    last_n: int = 10,
     db: Session = Depends(get_db),
 ):
     season_year = normalize_season_year(season) or latest_season_year(db)
@@ -241,9 +245,9 @@ def dashboard(
     latest_run = get_pipeline_runs(limit=1, db=db)
     model_prediction = predict_matchup_win_probability(
         db=db,
-        team_a="Indiana Pacers",
-        team_b="Oklahoma City Thunder",
-        last_n=10,
+        team_a=team_a,
+        team_b=team_b,
+        last_n=last_n,
     )
     model_metrics = load_win_probability_metrics()
     total_rows = nba_team_query(db.query(func.count(Game.id))).scalar() or 0
@@ -286,17 +290,28 @@ def dashboard(
     model_accuracy = model_metrics.get("accuracy", "n/a")
     model_auc = model_metrics.get("roc_auc", "n/a")
     model_rows = model_metrics.get("rows_total", "n/a")
-    prediction_link = "/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10"
+    safe_team_a = escape(team_a)
+    safe_team_b = escape(team_b)
+    safe_last_n = max(3, min(last_n, 25))
+    prediction_link = (
+        f"/predictions/matchup?team_a={quote_plus(team_a)}"
+        f"&team_b={quote_plus(team_b)}&last_n={safe_last_n}"
+    )
     if model_prediction:
         favorite = escape(model_prediction["favorite"])
-        pacers_probability = model_prediction["win_probability"].get("Indiana Pacers", 0)
-        thunder_probability = model_prediction["win_probability"].get("Oklahoma City Thunder", 0)
+        team_a_probability = model_prediction["win_probability"].get(team_a, 0)
+        team_b_probability = model_prediction["win_probability"].get(team_b, 0)
         prediction_summary = (
+            f"<span class=\"label\">Predicted winner</span>"
             f"<strong>{favorite}</strong>"
-            f"<span>Pacers {pacers_probability:.1%} | Thunder {thunder_probability:.1%}</span>"
+            f"<span>{safe_team_a} {team_a_probability:.1%} | {safe_team_b} {team_b_probability:.1%}</span>"
         )
     else:
-        prediction_summary = "<strong>Model ready</strong><span>Prediction data unavailable</span>"
+        prediction_summary = (
+            "<span class=\"label\">Prediction unavailable</span>"
+            "<strong>Need recent games</strong>"
+            "<span>Try two official NBA team names with recent data.</span>"
+        )
 
     return HTMLResponse(
         f"""
@@ -446,6 +461,43 @@ def dashboard(
                 }}
                 .prediction-result strong {{ font-size: 1.5rem; }}
                 .prediction-result span {{ color: rgba(255, 255, 255, 0.78); }}
+                .prediction-result .label {{
+                    color: var(--court);
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    letter-spacing: 0.16em;
+                    text-transform: uppercase;
+                }}
+                .prediction-form {{
+                    display: grid;
+                    gap: 10px;
+                    margin-top: 14px;
+                }}
+                .prediction-form label {{
+                    color: rgba(255, 255, 255, 0.78);
+                    font-size: 0.82rem;
+                    font-weight: 700;
+                }}
+                .prediction-form input {{
+                    width: 100%;
+                    border: 1px solid rgba(255, 255, 255, 0.24);
+                    border-radius: 14px;
+                    background: rgba(255, 255, 255, 0.1);
+                    color: #fff;
+                    padding: 10px 12px;
+                    font: inherit;
+                }}
+                .prediction-form input::placeholder {{ color: rgba(255, 255, 255, 0.55); }}
+                .prediction-form button {{
+                    border: 0;
+                    border-radius: 999px;
+                    background: var(--court);
+                    color: #17202a;
+                    cursor: pointer;
+                    font: inherit;
+                    font-weight: 700;
+                    padding: 10px 14px;
+                }}
                 ul {{ list-style: none; margin: 0; padding: 0; }}
                 li {{
                     display: flex;
@@ -543,8 +595,18 @@ def dashboard(
                                 Logistic regression trained on {model_rows} historical matchup rows
                                 using rolling 10-game team form features.
                             </p>
+                            <form class="prediction-form" action="/dashboard" method="get">
+                                <input type="hidden" name="season" value="{escape(str(season_year or ""))}">
+                                <label for="team-a">Team A</label>
+                                <input id="team-a" name="team_a" value="{safe_team_a}" placeholder="Indiana Pacers">
+                                <label for="team-b">Team B</label>
+                                <input id="team-b" name="team_b" value="{safe_team_b}" placeholder="Oklahoma City Thunder">
+                                <label for="last-n">Recent games window</label>
+                                <input id="last-n" name="last_n" type="number" min="3" max="25" value="{safe_last_n}">
+                                <button type="submit">Update Dashboard Prediction</button>
+                            </form>
                             <a href="{prediction_link}">
-                                Pacers vs Thunder
+                                Open Raw Prediction JSON
                             </a>
                             <a href="/predictions/history?limit=10">
                                 Prediction History
