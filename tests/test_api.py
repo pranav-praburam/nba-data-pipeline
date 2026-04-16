@@ -171,16 +171,18 @@ def test_data_quality_reports_non_nba_event_teams():
     assert "Ratiopharm Ulm" in summary["non_nba_or_event_teams"]
 
 
-def test_matchup_prediction_returns_heuristic_result():
+def test_matchup_prediction_returns_ml_result():
     response = client.get(
         "/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=3"
     )
 
     assert response.status_code == 200
     prediction = response.json()
-    assert prediction["model_type"] == "heuristic_recent_form"
+    assert prediction["model_type"] == "logistic_regression"
     assert prediction["last_n_games"] == 3
     assert set(prediction["win_probability"]) == {"Indiana Pacers", "Oklahoma City Thunder"}
+    assert "training_metrics" in prediction
+    assert "feature_inputs" in prediction
 
 
 def test_dashboard_renders_latest_season_view_without_non_nba_teams():

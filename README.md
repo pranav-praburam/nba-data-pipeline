@@ -181,5 +181,5 @@ Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, D
 
 - Add data quality checks for row counts, nulls, and duplicate keys
 - Add a richer frontend dashboard with interactive charts
-- Replace the heuristic prediction endpoint with the trained model artifact
+- Add model monitoring and prediction history storage
 - Expand CI to include linting and deployment smoke tests

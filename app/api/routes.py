@@ -446,10 +446,10 @@ def dashboard(
                             <ul>{three_point_rows}</ul>
                         </div>
                         <div class="card prediction-card">
-                            <h2>Heuristic Matchup Prediction</h2>
+                            <h2>ML Matchup Prediction</h2>
                             <p>
-                                A transparent recent-form score, not a trained ML model.
-                                Useful for showing how pipeline data can power model-ready features.
+                                A baseline logistic regression model trained on rolling team form.
+                                Useful for showing how pipeline data powers model-backed API features.
                             </p>
                             <a href="/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10">
                                 Pacers vs Thunder
