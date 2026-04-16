@@ -88,8 +88,9 @@ def matchup_prediction(
     last_n: int = Query(default=10, ge=3, le=25),
     db: Session = Depends(get_db),
 ):
-    # Machine-readable endpoint: resolves names, serves the model prediction, and
-    # records the request so /predictions/history can show real model usage.
+    # Machine-readable endpoint: team_a is the home team and team_b is the away
+    # team, matching the model's home/away training rows. Each served prediction
+    # is recorded so /predictions/history can show real model usage.
     resolved_team_a = resolve_team_name(team_a)
     resolved_team_b = resolve_team_name(team_b)
     unresolved = []
@@ -133,8 +134,8 @@ def prediction_page(
     last_n: int = Query(default=10, ge=3, le=25),
     db: Session = Depends(get_db),
 ):
-    # Human-readable wrapper around the same prediction path. This keeps the visual
-    # page and JSON API consistent instead of duplicating model-serving logic.
+    # Human-readable wrapper around the same home-vs-away prediction path. This
+    # keeps the visual page and JSON API consistent instead of duplicating logic.
     result = matchup_prediction(team_a=team_a, team_b=team_b, last_n=last_n, db=db)
     teams = list(result["win_probability"].keys())
     team_a_name, team_b_name = teams[0], teams[1]
