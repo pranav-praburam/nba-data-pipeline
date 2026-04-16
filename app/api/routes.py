@@ -355,7 +355,8 @@ def dashboard(
         prediction_summary = (
             f"<span class=\"label\">Predicted winner</span>"
             f"<strong>{favorite}</strong>"
-            f"<span>{safe_team_a} {team_a_probability:.1%} | {safe_team_b} {team_b_probability:.1%}</span>"
+            f"<span>Home: {safe_team_a} {team_a_probability:.1%} | "
+            f"Away: {safe_team_b} {team_b_probability:.1%}</span>"
         )
     else:
         prediction_summary = (
@@ -644,15 +645,16 @@ def dashboard(
                             <div class="prediction-result">{prediction_summary}</div>
                             <p>
                                 Logistic regression trained on {model_rows} historical matchup rows
-                                using rolling 10-game team form features. ROC-AUC: {model_auc};
+                                using rolling 10-game team form features. The first team is treated
+                                as home and the second as away. ROC-AUC: {model_auc};
                                 high-confidence accuracy: {high_confidence_accuracy}
                                 across {high_confidence_coverage} of holdout games.
                             </p>
                             <form class="prediction-form" action="/dashboard" method="get">
                                 <input type="hidden" name="season" value="{escape(str(season_year or ""))}">
-                                <label for="team-a">Team A</label>
+                                <label for="team-a">Home Team</label>
                                 <input id="team-a" name="team_a" value="{safe_team_a}" placeholder="Indiana Pacers">
-                                <label for="team-b">Team B</label>
+                                <label for="team-b">Away Team</label>
                                 <input id="team-b" name="team_b" value="{safe_team_b}" placeholder="Oklahoma City Thunder">
                                 <label for="last-n">Recent games window</label>
                                 <input id="last-n" name="last_n" type="number" min="3" max="25" value="{safe_last_n}">

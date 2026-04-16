@@ -71,6 +71,8 @@ nba_api
 - `GET /pipeline/runs?limit=3`
 - `GET /dashboard`
 
+For prediction endpoints, `team_a` is the home team and `team_b` is the away team. The visual `/predict` page labels these as Home Team and Away Team, while the query parameters keep their original names for API compatibility.
+
 ## Local Run
 
 Inside the virtual environment:
@@ -143,12 +145,14 @@ The training script:
 - saves model artifacts under `models/`
 - records served predictions in `model_predictions`
 
-Current local baseline metrics:
+Current tuned baseline metrics:
 
 ```text
-Accuracy: 0.6514
-ROC-AUC: 0.7286
-Log loss: 0.6098
+Accuracy: 0.6762
+Precision: 0.7246
+ROC-AUC: 0.7311
+High-confidence accuracy: 0.7662
+Baseline accuracy: 0.5600
 Training rows: 2,096
 Test rows: 525
 ```

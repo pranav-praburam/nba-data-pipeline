@@ -306,14 +306,15 @@ def prediction_page(
                     <div class="eyebrow">Interactive ML Endpoint</div>
                     <h1>NBA Matchup Predictor</h1>
                     <p>
-                        Enter full team names or short names like Bulls, Lakers, Heat, Thunder, or Knicks.
-                        The model uses each team's recent form and returns win probabilities.
+                        Enter the home team and away team using full names or short names like
+                        Bulls, Lakers, Heat, Thunder, or Knicks. The model treats the first
+                        team as home because it was trained on home-vs-away matchups.
                     </p>
                     <form action="/predict" method="get">
-                        <label>Team A
+                        <label>Home Team
                             <input name="team_a" value="{safe_team_a_input}" placeholder="Bulls">
                         </label>
-                        <label>Team B
+                        <label>Away Team
                             <input name="team_b" value="{safe_team_b_input}" placeholder="Lakers">
                         </label>
                         <label>Last N
@@ -332,12 +333,12 @@ def prediction_page(
                             </p>
                         </div>
                         <div class="probability">
-                            <span>{safe_team_a_name}</span>
+                            <span>Home: {safe_team_a_name}</span>
                             <strong>{team_a_probability:.1%}</strong>
                             <div class="bar"><span style="width: {team_a_probability * 100:.1f}%"></span></div>
                         </div>
                         <div class="probability">
-                            <span>{safe_team_b_name}</span>
+                            <span>Away: {safe_team_b_name}</span>
                             <strong>{team_b_probability:.1%}</strong>
                             <div class="bar"><span style="width: {team_b_probability * 100:.1f}%"></span></div>
                         </div>
