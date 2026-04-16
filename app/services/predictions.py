@@ -26,8 +26,36 @@ def recent_team_profile(db: Session, team_name: str, last_n: int):
     if not games:
         return None
 
+    game_ids = [game.game_id for game in games]
+    opponent_rows = (
+        db.query(Game)
+        .filter(Game.game_id.in_(game_ids))
+        .filter(Game.team != team_name)
+        .all()
+    )
+    opponent_points_by_game = {
+        opponent.game_id: opponent.points
+        for opponent in opponent_rows
+    }
+
     wins = sum(1 for game in games if game.wl == "W")
     avg_points = sum(game.points for game in games) / len(games)
+    points_allowed = [
+        opponent_points_by_game.get(game.game_id)
+        for game in games
+        if opponent_points_by_game.get(game.game_id) is not None
+    ]
+    avg_points_allowed = (
+        sum(points_allowed) / len(points_allowed)
+        if points_allowed
+        else 0
+    )
+    avg_point_diff = (
+        sum(game.points - opponent_points_by_game[game.game_id] for game in games if game.game_id in opponent_points_by_game)
+        / len(points_allowed)
+        if points_allowed
+        else 0
+    )
     avg_rebounds = sum((game.rebounds or 0) for game in games) / len(games)
     avg_assists = sum((game.assists or 0) for game in games) / len(games)
     avg_fg_pct = sum((game.fg_pct or 0) for game in games) / len(games)
@@ -49,6 +77,8 @@ def recent_team_profile(db: Session, team_name: str, last_n: int):
         "losses": len(games) - wins,
         "win_rate": round(wins / len(games), 3),
         "avg_points": round(avg_points, 2),
+        "avg_points_allowed": round(avg_points_allowed, 2),
+        "avg_point_diff": round(avg_point_diff, 2),
         "avg_rebounds": round(avg_rebounds, 2),
         "avg_assists": round(avg_assists, 2),
         "avg_fg_pct": round(avg_fg_pct, 3),
@@ -81,6 +111,8 @@ def model_team_features(db: Session, team_name: str, last_n: int):
     return {
         "win_rate_l10": profile["win_rate"],
         "avg_points_l10": profile["avg_points"],
+        "avg_points_allowed_l10": profile["avg_points_allowed"],
+        "avg_point_diff_l10": profile["avg_point_diff"],
         "avg_rebounds_l10": profile["avg_rebounds"],
         "avg_assists_l10": profile["avg_assists"],
         "avg_fg_pct_l10": profile["avg_fg_pct"],
@@ -95,6 +127,8 @@ def build_matchup_feature_row(team_a_features, team_b_features):
     base_features = [
         "win_rate_l10",
         "avg_points_l10",
+        "avg_points_allowed_l10",
+        "avg_point_diff_l10",
         "avg_rebounds_l10",
         "avg_assists_l10",
         "avg_fg_pct_l10",

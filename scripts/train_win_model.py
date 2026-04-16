@@ -35,22 +35,39 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, module=r"sklearn\..*"
 FEATURE_COLUMNS = [
     "home_win_rate_l10",
     "home_avg_points_l10",
+    "home_avg_points_allowed_l10",
+    "home_avg_point_diff_l10",
     "home_avg_rebounds_l10",
     "home_avg_assists_l10",
     "home_avg_fg_pct_l10",
     "home_avg_fg3_pct_l10",
     "away_win_rate_l10",
     "away_avg_points_l10",
+    "away_avg_points_allowed_l10",
+    "away_avg_point_diff_l10",
     "away_avg_rebounds_l10",
     "away_avg_assists_l10",
     "away_avg_fg_pct_l10",
     "away_avg_fg3_pct_l10",
     "diff_win_rate_l10",
     "diff_avg_points_l10",
+    "diff_avg_points_allowed_l10",
+    "diff_avg_point_diff_l10",
     "diff_avg_rebounds_l10",
     "diff_avg_assists_l10",
     "diff_avg_fg_pct_l10",
     "diff_avg_fg3_pct_l10",
+]
+
+BASE_ROLLING_FEATURES = [
+    "win_rate_l10",
+    "avg_points_l10",
+    "avg_points_allowed_l10",
+    "avg_point_diff_l10",
+    "avg_rebounds_l10",
+    "avg_assists_l10",
+    "avg_fg_pct_l10",
+    "avg_fg3_pct_l10",
 ]
 
 
@@ -92,15 +109,41 @@ def load_games_dataframe():
     )
 
 
+def add_opponent_context(df):
+    # Points allowed and point differential are derived from the paired opponent
+    # row for each game, then shifted before rolling to avoid target leakage.
+    df = df.copy()
+    df["points_allowed"] = np.nan
+    df["point_diff"] = np.nan
+
+    for _, group in df.groupby("game_id"):
+        if len(group) != 2:
+            continue
+
+        for index, row in group.iterrows():
+            opponent_rows = group[group["team_id"] != row["team_id"]]
+            if opponent_rows.empty:
+                continue
+
+            opponent_points = opponent_rows.iloc[0]["points"]
+            df.loc[index, "points_allowed"] = opponent_points
+            df.loc[index, "point_diff"] = row["points"] - opponent_points
+
+    return df
+
+
 def add_rolling_features(df, window):
     # Shift before rolling so a game's own result never leaks into the features
     # used to predict that same game.
+    df = add_opponent_context(df)
     df = df.sort_values(["team", "game_date", "game_id"]).copy()
     df["win"] = (df["wl"] == "W").astype(int)
 
     rolling_inputs = {
         "win": "win_rate_l10",
         "points": "avg_points_l10",
+        "points_allowed": "avg_points_allowed_l10",
+        "point_diff": "avg_point_diff_l10",
         "rebounds": "avg_rebounds_l10",
         "assists": "avg_assists_l10",
         "fg_pct": "avg_fg_pct_l10",
@@ -146,15 +189,7 @@ def build_training_dataset(games_df, window):
             "home_win": int(home["wl"] == "W"),
         }
 
-        base_features = [
-            "win_rate_l10",
-            "avg_points_l10",
-            "avg_rebounds_l10",
-            "avg_assists_l10",
-            "avg_fg_pct_l10",
-            "avg_fg3_pct_l10",
-        ]
-        for feature in base_features:
+        for feature in BASE_ROLLING_FEATURES:
             row[f"home_{feature}"] = home[feature]
             row[f"away_{feature}"] = away[feature]
             row[f"diff_{feature}"] = home[feature] - away[feature]

@@ -645,8 +645,9 @@ def dashboard(
                             <div class="prediction-result">{prediction_summary}</div>
                             <p>
                                 Logistic regression trained on {model_rows} historical matchup rows
-                                using rolling 10-game team form features. The first team is treated
-                                as home and the second as away. ROC-AUC: {model_auc};
+                                using rolling 10-game team form, points allowed, and point-differential
+                                features. The first team is treated as home and the second as away.
+                                ROC-AUC: {model_auc};
                                 high-confidence accuracy: {high_confidence_accuracy}
                                 across {high_confidence_coverage} of holdout games.
                             </p>
