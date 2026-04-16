@@ -46,6 +46,8 @@ FEATURE_COLUMNS = [
 
 
 def load_games_dataframe():
+    # Train only on official NBA teams and completed win/loss rows; this filters
+    # out All-Star/exhibition noise that can appear in NBA source data.
     db = SessionLocal()
     try:
         rows = (
@@ -82,6 +84,8 @@ def load_games_dataframe():
 
 
 def add_rolling_features(df, window):
+    # Shift before rolling so a game's own result never leaks into the features
+    # used to predict that same game.
     df = df.sort_values(["team", "game_date", "game_id"]).copy()
     df["win"] = (df["wl"] == "W").astype(int)
 
@@ -104,6 +108,8 @@ def add_rolling_features(df, window):
 
 
 def build_training_dataset(games_df, window):
+    # Reconstruct each matchup as one row with home-team target and both teams'
+    # pre-game rolling form. Games with incomplete pairs are skipped.
     if games_df.empty:
         return pd.DataFrame()
 
@@ -157,6 +163,8 @@ def build_training_dataset(games_df, window):
 
 
 def train_model(dataset, test_size):
+    # Chronological holdout is more realistic than random splitting for sports
+    # data because future games should not influence past predictions.
     split_index = int(len(dataset) * (1 - test_size))
     train_df = dataset.iloc[:split_index].copy()
     test_df = dataset.iloc[split_index:].copy()
@@ -181,6 +189,8 @@ def train_model(dataset, test_size):
 
 
 def save_artifacts(model, metrics, dataset, train_df, test_df, output_dir, window):
+    # Save the model, metrics, and a small sample so reviewers can inspect both
+    # the artifact and the data shape used to train it.
     output_dir.mkdir(parents=True, exist_ok=True)
     model_path = output_dir / "win_probability_model.joblib"
     metrics_path = output_dir / "win_probability_metrics.json"

@@ -32,12 +32,16 @@ router.include_router(admin_router)
 
 @router.get("/")
 def home(db: Session = Depends(get_db)):
+    # The landing page uses live database/model metadata so the portfolio homepage
+    # proves the pipeline is deployed, populated, and model-backed.
     total_rows = nba_team_query(db.query(func.count(Game.id))).scalar() or 0
     unique_games = nba_team_query(db.query(func.count(func.distinct(Game.game_id)))).scalar() or 0
     latest_run = get_pipeline_runs(limit=1, db=db)
     run_status = latest_run[0].get("status", "unknown") if latest_run else "unknown"
     model_metrics = load_win_probability_metrics()
     model_accuracy = model_metrics.get("accuracy", "n/a")
+    # Keep this as a normal template string with placeholders because CSS braces
+    # are much easier to maintain here than inside one large f-string.
     html = """
         <!doctype html>
         <html lang="en">
@@ -269,6 +273,8 @@ def dashboard(
     last_n: int = 10,
     db: Session = Depends(get_db),
 ):
+    # Server-rendered dashboard for the resume/demo path. It reuses the same API
+    # helper functions as the JSON endpoints so charts, stats, and endpoints agree.
     season_year = normalize_season_year(season) or latest_season_year(db)
     season_label = season_display_name(season_year)
     top_scoring_teams = team_rankings(metric="points", limit=8, season=season_year, db=db)
@@ -334,6 +340,8 @@ def dashboard(
         f"/predictions/matchup?team_a={quote_plus(team_a)}"
         f"&team_b={quote_plus(team_b)}&last_n={safe_last_n}"
     )
+    # The dashboard prediction is intentionally lightweight: users can edit teams
+    # directly on the page, while the deeper/raw response remains one click away.
     if model_prediction:
         favorite = escape(model_prediction["favorite"])
         team_a_probability = model_prediction["win_probability"].get(team_a, 0)

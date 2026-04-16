@@ -11,6 +11,8 @@ from ingest_games import ingest_games  # noqa: E402
 
 
 def main():
+    # Small CLI wrapper used by local/manual runs. The deployed scheduled path
+    # triggers Render's /admin/ingest endpoint instead.
     parser = argparse.ArgumentParser(description="Run scheduled NBA game ingestion.")
     parser.add_argument(
         "--season",

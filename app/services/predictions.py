@@ -14,6 +14,7 @@ METRICS_PATH = PROJECT_ROOT / "models" / "win_probability_metrics.json"
 
 
 def recent_team_profile(db: Session, team_name: str, last_n: int):
+    # Recent-form profile used by both the visual dashboard and the ML feature row.
     games = (
         db.query(Game)
         .filter(Game.team == team_name)
@@ -58,6 +59,8 @@ def recent_team_profile(db: Session, team_name: str, last_n: int):
 
 @lru_cache(maxsize=1)
 def load_win_probability_artifact():
+    # Cache the fitted model in-process so every request does not reload joblib
+    # from disk. Render may still restart the process, so this remains safe/simple.
     return joblib.load(MODEL_PATH)
 
 
@@ -69,6 +72,8 @@ def load_win_probability_metrics():
 
 
 def model_team_features(db: Session, team_name: str, last_n: int):
+    # Feature names intentionally mirror scripts/train_win_model.py so serving and
+    # training stay aligned.
     profile = recent_team_profile(db, team_name, last_n)
     if not profile:
         return None
@@ -85,6 +90,8 @@ def model_team_features(db: Session, team_name: str, last_n: int):
 
 
 def build_matchup_feature_row(team_a_features, team_b_features):
+    # Treat team_a as the home-side input and include difference features, matching
+    # the training dataset's home/away matchup representation.
     base_features = [
         "win_rate_l10",
         "avg_points_l10",
@@ -103,6 +110,8 @@ def build_matchup_feature_row(team_a_features, team_b_features):
 
 
 def predict_matchup_win_probability(db: Session, team_a: str, team_b: str, last_n: int):
+    # End-to-end model serving: build rolling-form features, apply the saved
+    # sklearn pipeline, and return probabilities plus explainable inputs.
     team_a_features = model_team_features(db, team_a, last_n)
     team_b_features = model_team_features(db, team_b, last_n)
 
@@ -139,6 +148,8 @@ def predict_matchup_win_probability(db: Session, team_a: str, team_b: str, last_
 
 
 def record_model_prediction(db: Session, prediction):
+    # Store enough context to audit predictions later without storing the whole
+    # response payload.
     probabilities = prediction["win_probability"]
     team_a, team_b = list(probabilities.keys())
     saved_prediction = ModelPrediction(

@@ -2,7 +2,10 @@ from sqlalchemy import Column, DateTime, Float, Index, Integer, String, Text
 from sqlalchemy.sql import func
 from app.db.database import Base
 
+
 class Game(Base):
+    # One NBA game produces two rows: one team-game record for each team.
+    # This shape makes team rankings, trends, and rolling model features easier.
     __tablename__ = "games"
     __table_args__ = (
         Index("ux_games_game_id_team_id", "game_id", "team_id", unique=True),
@@ -31,6 +34,8 @@ class Game(Base):
 
 
 class PipelineRun(Base):
+    # Audit table for ingestion observability: every scheduled/manual load records
+    # what happened, even when zero new games are available.
     __tablename__ = "pipeline_runs"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -47,6 +52,8 @@ class PipelineRun(Base):
 
 
 class ModelPrediction(Base):
+    # Lightweight prediction log so the app can show model usage/history and prove
+    # that the ML endpoint is serving real requests, not just static JSON.
     __tablename__ = "model_predictions"
 
     id = Column(Integer, primary_key=True, index=True)

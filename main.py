@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 async def initialize_database(max_attempts: int = 5, delay_seconds: int = 3) -> None:
+    # Render can start the web service before Postgres is ready, so startup retries
+    # make deploys more reliable without crashing the whole API container.
     for attempt in range(1, max_attempts + 1):
         try:
             Base.metadata.create_all(bind=engine)
@@ -37,6 +39,8 @@ async def initialize_database(max_attempts: int = 5, delay_seconds: int = 3) -> 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Keep table creation close to app startup for a simple portfolio deploy.
+    # Larger production systems would usually replace this with Alembic migrations.
     await initialize_database()
     yield
 

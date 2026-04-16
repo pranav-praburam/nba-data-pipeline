@@ -25,6 +25,8 @@ GAME_COLUMNS = [
 
 
 def fetch_games_dataframe(season="2024-25", timeout=NBA_API_TIMEOUT, retries=NBA_API_RETRIES):
+    # stats.nba.com is the richer season source, but it can be flaky from CI/cloud
+    # networks. Retries plus a CDN fallback keep scheduled ingestion dependable.
     last_error = None
     for attempt in range(1, retries + 1):
         try:
@@ -75,6 +77,8 @@ def empty_games_dataframe():
 
 
 def season_id_for_game(season, game_id):
+    # The NBA encodes season type in the first digit of game_id. Keeping this format
+    # lets live CDN rows align with the stats.nba.com rows already in Postgres.
     season_year = season.split("-", 1)[0]
     season_type_prefix = str(game_id)[0] if str(game_id) else "2"
     return f"{season_type_prefix}{season_year}"
@@ -85,6 +89,8 @@ def team_full_name(team):
 
 
 def build_live_team_row(game, team_key, opponent_key, season):
+    # Convert the NBA live boxscore JSON into the same normalized column contract
+    # used by LeagueGameLog so the downstream insert path is source-agnostic.
     team = game[team_key]
     opponent = game[opponent_key]
     stats = team["statistics"]
@@ -117,6 +123,8 @@ def build_live_team_row(game, team_key, opponent_key, season):
 
 
 def fetch_live_scoreboard_dataframe(season="2025-26", timeout=NBA_API_TIMEOUT):
+    # CDN fallback intentionally ingests only completed games. In-progress games
+    # would create unstable rows because scores and team stats keep changing.
     scoreboard_url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
     response = requests.get(scoreboard_url, timeout=timeout)
     response.raise_for_status()
@@ -151,6 +159,8 @@ def get_latest_ingested_game_date(db, season_ids):
     )
 
 def build_game_records(df):
+    # Translate pandas rows into SQLAlchemy dictionaries. This is the final data
+    # contract for the games table regardless of upstream source.
     records = []
     for _, row in df.iterrows():
         records.append(
@@ -184,6 +194,8 @@ def record_pipeline_run(
     status,
     error_message=None,
 ):
+    # Pipeline metadata is committed in the same database as the data, making
+    # /pipeline/runs and the dashboard useful for operational debugging.
     run = PipelineRun(
         pipeline_name="games_ingestion",
         season=season,
@@ -203,6 +215,8 @@ def ingest_games(season="2024-25", full_refresh=False, source="stats"):
 
     try:
         Base.metadata.create_all(bind=engine)
+        # Scheduled production loads use source="live" because the NBA CDN has
+        # been more reliable from Render/GitHub than stats.nba.com.
         if source == "live":
             df = fetch_live_scoreboard_dataframe(season=season).sort_values(
                 ["GAME_DATE", "GAME_ID", "TEAM_ID"]
@@ -218,6 +232,8 @@ def ingest_games(season="2024-25", full_refresh=False, source="stats"):
             else get_latest_ingested_game_date(db, season_ids)
         )
 
+        # Incremental loads only process games newer than the latest date already
+        # present for that season, keeping daily runs fast and resume-friendly.
         if latest_game_date:
             latest_game_date = pd.to_datetime(latest_game_date)
             df = df[df["GAME_DATE"] > latest_game_date]
@@ -252,6 +268,8 @@ def ingest_games(season="2024-25", full_refresh=False, source="stats"):
         statement = statement.on_conflict_do_nothing(
             index_elements=["game_id", "team_id"]
         )
+        # The unique game/team index turns ingestion into an idempotent upsert:
+        # reruns skip existing rows instead of creating duplicates.
         result = db.execute(statement)
 
         inserted_count = result.rowcount if result.rowcount and result.rowcount > 0 else 0

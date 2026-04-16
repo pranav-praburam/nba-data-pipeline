@@ -22,6 +22,8 @@ TEAM_ALIASES = {
     team.lower(): team
     for team in NBA_TEAMS
 }
+# The portfolio UI accepts recruiter-friendly shorthand such as "Bulls" or
+# "Thunder" while the database/model still use official NBA team names.
 TEAM_ALIASES.update(
     {
         "76ers": "Philadelphia 76ers",
@@ -64,6 +66,7 @@ TEAM_ALIASES.update(
 
 
 def resolve_team_name(team_name: str):
+    # First try exact aliases, then allow a single unambiguous partial match.
     normalized = team_name.strip().lower()
     if normalized in TEAM_ALIASES:
         return TEAM_ALIASES[normalized]
@@ -85,6 +88,8 @@ def matchup_prediction(
     last_n: int = Query(default=10, ge=3, le=25),
     db: Session = Depends(get_db),
 ):
+    # Machine-readable endpoint: resolves names, serves the model prediction, and
+    # records the request so /predictions/history can show real model usage.
     resolved_team_a = resolve_team_name(team_a)
     resolved_team_b = resolve_team_name(team_b)
     unresolved = []
@@ -128,6 +133,8 @@ def prediction_page(
     last_n: int = Query(default=10, ge=3, le=25),
     db: Session = Depends(get_db),
 ):
+    # Human-readable wrapper around the same prediction path. This keeps the visual
+    # page and JSON API consistent instead of duplicating model-serving logic.
     result = matchup_prediction(team_a=team_a, team_b=team_b, last_n=last_n, db=db)
     teams = list(result["win_probability"].keys())
     team_a_name, team_b_name = teams[0], teams[1]
@@ -344,6 +351,8 @@ def prediction_history(
     limit: int = Query(default=10, ge=1, le=50),
     db: Session = Depends(get_db),
 ):
+    # Simple serving audit trail for demos: latest predictions, model version, and
+    # probabilities are queryable without digging through logs.
     predictions = (
         db.query(ModelPrediction)
         .order_by(ModelPrediction.created_at.desc(), ModelPrediction.id.desc())
