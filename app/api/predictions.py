@@ -146,6 +146,12 @@ def prediction_page(
     safe_team_a_name = escape(team_a_name)
     safe_team_b_name = escape(team_b_name)
     safe_favorite = escape(favorite)
+    accuracy = result["training_metrics"].get("accuracy", "n/a")
+    precision = result["training_metrics"].get("precision", "n/a")
+    high_confidence_accuracy = result["training_metrics"].get(
+        "high_confidence_accuracy",
+        "n/a",
+    )
     raw_json_link = (
         f"/predictions/matchup?team_a={quote_plus(team_a_name)}"
         f"&team_b={quote_plus(team_b_name)}&last_n={last_n}"
@@ -319,7 +325,11 @@ def prediction_page(
                         <div class="winner">
                             <span class="eyebrow">Predicted Winner</span>
                             <strong>{safe_favorite}</strong>
-                            <p>Model: {result["model_type"]} | Accuracy: {result["training_metrics"].get("accuracy")}</p>
+                            <p>
+                                Model: {result["model_type"]} | Accuracy: {accuracy}
+                                | Precision: {precision}
+                                | High-confidence accuracy: {high_confidence_accuracy}
+                            </p>
                         </div>
                         <div class="probability">
                             <span>{safe_team_a_name}</span>

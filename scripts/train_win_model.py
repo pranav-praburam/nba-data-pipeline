@@ -9,7 +9,16 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, log_loss, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    brier_score_loss,
+    f1_score,
+    log_loss,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -162,6 +171,44 @@ def build_training_dataset(games_df, window):
     return dataset.sort_values(["game_date", "game_id"]).reset_index(drop=True)
 
 
+def evaluate_model(test_df, probabilities):
+    predictions = (probabilities >= 0.5).astype(int)
+    confident_mask = (probabilities >= 0.6) | (probabilities <= 0.4)
+    confident_accuracy = None
+    confident_coverage = 0.0
+    if confident_mask.any():
+        confident_accuracy = accuracy_score(
+            test_df["home_win"][confident_mask],
+            predictions[confident_mask],
+        )
+        confident_coverage = confident_mask.mean()
+
+    home_baseline = np.ones(len(test_df), dtype=int)
+    majority_baseline = np.full(
+        len(test_df),
+        int(test_df["home_win"].mean() >= 0.5),
+        dtype=int,
+    )
+
+    return {
+        "accuracy": round(float(accuracy_score(test_df["home_win"], predictions)), 4),
+        "precision": round(float(precision_score(test_df["home_win"], predictions, zero_division=0)), 4),
+        "recall": round(float(recall_score(test_df["home_win"], predictions, zero_division=0)), 4),
+        "f1": round(float(f1_score(test_df["home_win"], predictions, zero_division=0)), 4),
+        "roc_auc": round(float(roc_auc_score(test_df["home_win"], probabilities)), 4),
+        "log_loss": round(float(log_loss(test_df["home_win"], probabilities)), 4),
+        "brier_score": round(float(brier_score_loss(test_df["home_win"], probabilities)), 4),
+        "high_confidence_accuracy": (
+            round(float(confident_accuracy), 4)
+            if confident_accuracy is not None
+            else None
+        ),
+        "high_confidence_coverage": round(float(confident_coverage), 4),
+        "home_team_baseline_accuracy": round(float(accuracy_score(test_df["home_win"], home_baseline)), 4),
+        "majority_class_baseline_accuracy": round(float(accuracy_score(test_df["home_win"], majority_baseline)), 4),
+    }
+
+
 def train_model(dataset, test_size):
     # Chronological holdout is more realistic than random splitting for sports
     # data because future games should not influence past predictions.
@@ -175,17 +222,24 @@ def train_model(dataset, test_size):
             ("classifier", LogisticRegression(max_iter=1000, random_state=42, solver="liblinear")),
         ]
     )
-    model.fit(train_df[FEATURE_COLUMNS], train_df["home_win"])
+    search = GridSearchCV(
+        estimator=model,
+        param_grid={
+            "classifier__C": [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0],
+            "classifier__class_weight": [None, "balanced"],
+        },
+        cv=TimeSeriesSplit(n_splits=5),
+        scoring="roc_auc",
+    )
+    search.fit(train_df[FEATURE_COLUMNS], train_df["home_win"])
+    tuned_model = search.best_estimator_
 
-    test_probabilities = model.predict_proba(test_df[FEATURE_COLUMNS])[:, 1]
-    test_predictions = (test_probabilities >= 0.5).astype(int)
+    test_probabilities = tuned_model.predict_proba(test_df[FEATURE_COLUMNS])[:, 1]
+    metrics = evaluate_model(test_df, test_probabilities)
+    metrics["cv_best_roc_auc"] = round(float(search.best_score_), 4)
+    metrics["best_params"] = search.best_params_
 
-    metrics = {
-        "accuracy": round(float(accuracy_score(test_df["home_win"], test_predictions)), 4),
-        "roc_auc": round(float(roc_auc_score(test_df["home_win"], test_probabilities)), 4),
-        "log_loss": round(float(log_loss(test_df["home_win"], test_probabilities)), 4),
-    }
-    return model, train_df, test_df, metrics
+    return tuned_model, train_df, test_df, metrics
 
 
 def save_artifacts(model, metrics, dataset, train_df, test_df, output_dir, window):

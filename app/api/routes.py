@@ -40,6 +40,7 @@ def home(db: Session = Depends(get_db)):
     run_status = latest_run[0].get("status", "unknown") if latest_run else "unknown"
     model_metrics = load_win_probability_metrics()
     model_accuracy = model_metrics.get("accuracy", "n/a")
+    model_precision = model_metrics.get("precision", "n/a")
     # Keep this as a normal template string with placeholders because CSS braces
     # are much easier to maintain here than inside one large f-string.
     html = """
@@ -108,7 +109,7 @@ def home(db: Session = Depends(get_db)):
                 }
                 .metric-grid {
                     display: grid;
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
                     gap: 16px;
                     margin-top: 28px;
                 }
@@ -230,6 +231,7 @@ def home(db: Session = Depends(get_db)):
                             <div class="metric"><strong>__TOTAL_ROWS__</strong><span>official team-game rows</span></div>
                             <div class="metric"><strong>__UNIQUE_GAMES__</strong><span>unique games modeled</span></div>
                             <div class="metric"><strong>__MODEL_ACCURACY__</strong><span>ML holdout accuracy</span></div>
+                            <div class="metric"><strong>__MODEL_PRECISION__</strong><span>ML holdout precision</span></div>
                         </div>
                         <div class="links">
                             <a class="link-card" href="/dashboard">Dashboard</a>
@@ -258,6 +260,7 @@ def home(db: Session = Depends(get_db)):
         html.replace("__TOTAL_ROWS__", f"{total_rows:,}")
         .replace("__UNIQUE_GAMES__", f"{unique_games:,}")
         .replace("__MODEL_ACCURACY__", str(model_accuracy))
+        .replace("__MODEL_PRECISION__", str(model_precision))
         .replace("__RUN_STATUS__", escape(str(run_status)))
     )
 
@@ -331,7 +334,10 @@ def dashboard(
     rows_inserted = run.get("rows_inserted", 0)
     completed_at = escape(str(run.get("completed_at", "not available")))
     model_accuracy = model_metrics.get("accuracy", "n/a")
+    model_precision = model_metrics.get("precision", "n/a")
     model_auc = model_metrics.get("roc_auc", "n/a")
+    high_confidence_accuracy = model_metrics.get("high_confidence_accuracy", "n/a")
+    high_confidence_coverage = model_metrics.get("high_confidence_coverage", "n/a")
     model_rows = model_metrics.get("rows_total", "n/a")
     safe_team_a = escape(team_a)
     safe_team_b = escape(team_b)
@@ -605,8 +611,8 @@ def dashboard(
                         <span>ML holdout accuracy</span>
                     </div>
                     <div class="mini-stat">
-                        <strong>{model_auc}</strong>
-                        <span>ML ROC-AUC</span>
+                        <strong>{model_precision}</strong>
+                        <span>ML holdout precision</span>
                     </div>
                 </section>
 
@@ -638,7 +644,9 @@ def dashboard(
                             <div class="prediction-result">{prediction_summary}</div>
                             <p>
                                 Logistic regression trained on {model_rows} historical matchup rows
-                                using rolling 10-game team form features.
+                                using rolling 10-game team form features. ROC-AUC: {model_auc};
+                                high-confidence accuracy: {high_confidence_accuracy}
+                                across {high_confidence_coverage} of holdout games.
                             </p>
                             <form class="prediction-form" action="/dashboard" method="get">
                                 <input type="hidden" name="season" value="{escape(str(season_year or ""))}">
