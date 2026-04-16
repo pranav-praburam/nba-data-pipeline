@@ -31,9 +31,14 @@ router.include_router(pipeline_router)
 router.include_router(admin_router)
 
 @router.get("/")
-def home():
-    return HTMLResponse(
-        """
+def home(db: Session = Depends(get_db)):
+    total_rows = nba_team_query(db.query(func.count(Game.id))).scalar() or 0
+    unique_games = nba_team_query(db.query(func.count(func.distinct(Game.game_id)))).scalar() or 0
+    latest_run = get_pipeline_runs(limit=1, db=db)
+    run_status = latest_run[0].get("status", "unknown") if latest_run else "unknown"
+    model_metrics = load_win_probability_metrics()
+    model_accuracy = model_metrics.get("accuracy", "n/a")
+    html = """
         <!doctype html>
         <html lang="en">
         <head>
@@ -173,6 +178,25 @@ def home():
                     background: #fff;
                     padding: 16px;
                 }
+                .primary-link {
+                    display: inline-block;
+                    color: #17202a;
+                    background: var(--court);
+                    border: 1px solid rgba(23, 32, 42, 0.12);
+                    border-radius: 999px;
+                    box-shadow: 0 16px 36px rgba(23, 32, 42, 0.14);
+                    padding: 14px 18px;
+                    margin: 6px 10px 8px 0;
+                }
+                .secondary-link {
+                    display: inline-block;
+                    border: 1px solid var(--line);
+                    border-radius: 999px;
+                    background: rgba(255, 255, 255, 0.72);
+                    padding: 14px 18px;
+                    margin: 6px 0 8px;
+                }
+                .cta-row { margin-top: 22px; }
                 @keyframes pop {
                     from { opacity: 0; transform: scale(0.3); }
                     to { opacity: 1; transform: scale(1); }
@@ -191,21 +215,29 @@ def home():
                         <h1>NBA Data Pipeline</h1>
                         <p>
                             A FastAPI + PostgreSQL pipeline that ingests NBA game data,
-                            tracks pipeline runs, and serves analytics-ready endpoints
-                            for team summaries, trends, leaders, and filtered game search.
+                            tracks pipeline runs, serves analytics endpoints, and powers
+                            a model-backed matchup prediction dashboard.
                         </p>
+                        <div class="cta-row">
+                            <a class="primary-link" href="/dashboard">Open Live Dashboard</a>
+                            <a class="secondary-link" href="/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10">Try ML Prediction</a>
+                        </div>
                         <div class="metric-grid">
-                            <div class="metric"><strong>2,802</strong><span>team-game rows loaded</span></div>
-                            <div class="metric"><strong>6</strong><span>API endpoints</span></div>
-                            <div class="metric"><strong>1</strong><span>Render deployment</span></div>
+                            <div class="metric"><strong>__TOTAL_ROWS__</strong><span>official team-game rows</span></div>
+                            <div class="metric"><strong>__UNIQUE_GAMES__</strong><span>unique games modeled</span></div>
+                            <div class="metric"><strong>__MODEL_ACCURACY__</strong><span>ML holdout accuracy</span></div>
                         </div>
                         <div class="links">
+                            <a class="link-card" href="/dashboard">Dashboard</a>
                             <a class="link-card" href="/docs">Interactive API Docs</a>
                             <a class="link-card" href="/games?limit=5">Recent Games</a>
-                            <a class="link-card" href="/analytics/team-rankings?metric=points&limit=10">Team Rankings</a>
+                            <a class="link-card" href="/analytics/team-rankings?metric=points&limit=10&season=2025-26">Team Rankings</a>
                             <a class="link-card" href="/teams/Indiana%20Pacers/trends?last_n=5">Pacers Trend Analysis</a>
+                            <a class="link-card" href="/predictions/history?limit=10">Prediction History</a>
                             <a class="link-card" href="/pipeline/runs?limit=3">Pipeline Runs</a>
+                            <a class="link-card" href="/data-quality/summary">Data Quality</a>
                         </div>
+                        <p class="eyebrow">Latest pipeline status: __RUN_STATUS__</p>
                     </div>
                     <div class="card court" aria-label="Basketball court visualization">
                         <span class="shot"></span>
@@ -218,6 +250,11 @@ def home():
         </body>
         </html>
         """
+    return HTMLResponse(
+        html.replace("__TOTAL_ROWS__", f"{total_rows:,}")
+        .replace("__UNIQUE_GAMES__", f"{unique_games:,}")
+        .replace("__MODEL_ACCURACY__", str(model_accuracy))
+        .replace("__RUN_STATUS__", escape(str(run_status)))
     )
 
 @router.get("/health")
