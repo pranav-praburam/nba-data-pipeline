@@ -2,6 +2,15 @@
 
 A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Docker, and Render. The project ingests real NBA game data, stores it in Postgres, exposes analytics endpoints, tracks ingestion runs, and includes a simple live dashboard.
 
+## Project Highlights
+
+- Automated data pipeline with incremental, idempotent NBA game ingestion
+- Production-style observability through `pipeline_runs`
+- Deployed FastAPI service backed by managed PostgreSQL
+- Live dashboard for analytics, ingestion health, and ML prediction
+- Baseline scikit-learn model served through an API endpoint
+- GitHub Actions for CI and scheduled ingestion triggers
+
 ## Live Demo
 
 - Dashboard: https://nba-data-pipeline-api.onrender.com/dashboard
@@ -11,6 +20,13 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - Team rankings: https://nba-data-pipeline-api.onrender.com/analytics/team-rankings?metric=points&limit=10&season=2025-26
 - Data quality: https://nba-data-pipeline-api.onrender.com/data-quality/summary
 - Matchup prediction: https://nba-data-pipeline-api.onrender.com/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
+
+Recommended demo path:
+
+1. Open the dashboard and point out live database metrics, pipeline status, and ML model metrics.
+2. Open `/pipeline/runs?limit=3` to show scheduled ingestion history.
+3. Open `/data-quality/summary` to show automated data quality checks.
+4. Open `/predictions/matchup?...` to show the model-backed prediction response.
 
 ## What This Project Demonstrates
 
@@ -176,6 +192,13 @@ After a successful Render deploy, the production database starts empty. Populate
 ## Resume Summary
 
 Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, scikit-learn, and Render. Implemented idempotent incremental ingestion from NBA data sources, scheduled daily refreshes, pipeline run tracking, analytics endpoints, baseline ML model training, and a live dashboard backed by real NBA game data.
+
+Resume bullets:
+
+- Built a deployed NBA analytics pipeline with FastAPI, PostgreSQL, SQLAlchemy, Docker, Render, and GitHub Actions.
+- Implemented idempotent incremental ingestion, scheduled refreshes, pipeline run tracking, and data quality endpoints.
+- Trained and served a scikit-learn logistic regression model for matchup win probability using rolling team-form features.
+- Designed API endpoints and a live dashboard for analytics, ingestion health, and model-backed predictions.
 
 ## Future Improvements
 

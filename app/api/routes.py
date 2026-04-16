@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import Optional
 from html import escape
@@ -19,6 +20,7 @@ from app.api.query_helpers import (
 )
 from app.db.database import get_db
 from app.db.models import Game
+from app.services.predictions import load_win_probability_metrics, predict_matchup_win_probability
 
 router = APIRouter()
 router.include_router(games_router)
@@ -237,6 +239,16 @@ def dashboard(
         .all()
     )
     latest_run = get_pipeline_runs(limit=1, db=db)
+    model_prediction = predict_matchup_win_probability(
+        db=db,
+        team_a="Indiana Pacers",
+        team_b="Oklahoma City Thunder",
+        last_n=10,
+    )
+    model_metrics = load_win_probability_metrics()
+    total_rows = nba_team_query(db.query(func.count(Game.id))).scalar() or 0
+    unique_games = nba_team_query(db.query(func.count(func.distinct(Game.game_id)))).scalar() or 0
+    latest_game_date = season_query(nba_team_query(db.query(func.max(Game.game_date))), season_year).scalar()
 
     max_points = max((team["average"] for team in top_scoring_teams), default=1)
     points_rows = "\n".join(
@@ -271,6 +283,20 @@ def dashboard(
     run_status = escape(str(run.get("status", "unknown")))
     rows_inserted = run.get("rows_inserted", 0)
     completed_at = escape(str(run.get("completed_at", "not available")))
+    model_accuracy = model_metrics.get("accuracy", "n/a")
+    model_auc = model_metrics.get("roc_auc", "n/a")
+    model_rows = model_metrics.get("rows_total", "n/a")
+    prediction_link = "/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10"
+    if model_prediction:
+        favorite = escape(model_prediction["favorite"])
+        pacers_probability = model_prediction["win_probability"].get("Indiana Pacers", 0)
+        thunder_probability = model_prediction["win_probability"].get("Oklahoma City Thunder", 0)
+        prediction_summary = (
+            f"<strong>{favorite}</strong>"
+            f"<span>Pacers {pacers_probability:.1%} | Thunder {thunder_probability:.1%}</span>"
+        )
+    else:
+        prediction_summary = "<strong>Model ready</strong><span>Prediction data unavailable</span>"
 
     return HTMLResponse(
         f"""
@@ -335,6 +361,12 @@ def dashboard(
                     grid-template-columns: 1.35fr 0.65fr;
                     gap: 22px;
                 }}
+                .hero-strip {{
+                    display: grid;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    gap: 14px;
+                    margin-bottom: 22px;
+                }}
                 .card {{
                     background: var(--panel);
                     border: 1px solid var(--line);
@@ -371,6 +403,21 @@ def dashboard(
                 }}
                 .stat strong {{ display: block; font-size: 2rem; letter-spacing: -0.05em; }}
                 .stat span {{ color: var(--muted); }}
+                .mini-stat {{
+                    background: rgba(255, 255, 255, 0.82);
+                    border: 1px solid var(--line);
+                    border-radius: 22px;
+                    padding: 16px;
+                }}
+                .mini-stat strong {{
+                    display: block;
+                    font-size: 1.7rem;
+                    letter-spacing: -0.05em;
+                }}
+                .mini-stat span {{
+                    color: var(--muted);
+                    font-size: 0.9rem;
+                }}
                 .prediction-card {{
                     margin-top: 16px;
                     background: linear-gradient(135deg, #17202a, #174ea6);
@@ -388,6 +435,17 @@ def dashboard(
                     padding: 10px 14px;
                     margin-top: 6px;
                 }}
+                .prediction-result {{
+                    display: grid;
+                    gap: 4px;
+                    background: rgba(255, 255, 255, 0.12);
+                    border: 1px solid rgba(255, 255, 255, 0.22);
+                    border-radius: 18px;
+                    padding: 14px;
+                    margin: 12px 0;
+                }}
+                .prediction-result strong {{ font-size: 1.5rem; }}
+                .prediction-result span {{ color: rgba(255, 255, 255, 0.78); }}
                 ul {{ list-style: none; margin: 0; padding: 0; }}
                 li {{
                     display: flex;
@@ -405,8 +463,17 @@ def dashboard(
                 th {{ color: var(--muted); font-weight: 700; }}
                 .full {{ grid-column: 1 / -1; }}
                 .nav {{ display: flex; gap: 12px; flex-wrap: wrap; }}
+                .pill {{
+                    display: inline-block;
+                    padding: 8px 12px;
+                    border-radius: 999px;
+                    background: rgba(23, 78, 166, 0.1);
+                    color: var(--paint);
+                    font-weight: 700;
+                    margin: 0 8px 8px 0;
+                }}
                 @media (max-width: 860px) {{
-                    .grid, .bar-row {{ grid-template-columns: 1fr; }}
+                    .grid, .bar-row, .hero-strip {{ grid-template-columns: 1fr; }}
                     .topline {{ align-items: start; flex-direction: column; }}
                 }}
             </style>
@@ -426,6 +493,25 @@ def dashboard(
                     </nav>
                 </div>
 
+                <section class="hero-strip">
+                    <div class="mini-stat">
+                        <strong>{total_rows:,}</strong>
+                        <span>official NBA team-game rows</span>
+                    </div>
+                    <div class="mini-stat">
+                        <strong>{unique_games:,}</strong>
+                        <span>unique games modeled</span>
+                    </div>
+                    <div class="mini-stat">
+                        <strong>{model_accuracy}</strong>
+                        <span>ML holdout accuracy</span>
+                    </div>
+                    <div class="mini-stat">
+                        <strong>{model_auc}</strong>
+                        <span>ML ROC-AUC</span>
+                    </div>
+                </section>
+
                 <section class="grid">
                     <article class="card">
                         <h2>Top Teams by Average Points</h2>
@@ -441,17 +527,22 @@ def dashboard(
                             <strong>{run_status}</strong>
                             <span>latest pipeline status</span>
                         </div>
+                        <div class="stat">
+                            <strong>{escape(str(latest_game_date or "n/a"))}</strong>
+                            <span>latest loaded game date</span>
+                        </div>
                         <div class="card">
                             <h2>Top 3PT% Teams</h2>
                             <ul>{three_point_rows}</ul>
                         </div>
                         <div class="card prediction-card">
                             <h2>ML Matchup Prediction</h2>
+                            <div class="prediction-result">{prediction_summary}</div>
                             <p>
-                                A baseline logistic regression model trained on rolling team form.
-                                Useful for showing how pipeline data powers model-backed API features.
+                                Logistic regression trained on {model_rows} historical matchup rows
+                                using rolling 10-game team form features.
                             </p>
-                            <a href="/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10">
+                            <a href="{prediction_link}">
                                 Pacers vs Thunder
                             </a>
                         </div>
@@ -466,6 +557,13 @@ def dashboard(
                             <tbody>{game_rows}</tbody>
                         </table>
                         <p class="eyebrow">Latest run completed: {completed_at}</p>
+                        <p>
+                            <span class="pill">FastAPI</span>
+                            <span class="pill">PostgreSQL</span>
+                            <span class="pill">GitHub Actions</span>
+                            <span class="pill">scikit-learn</span>
+                            <span class="pill">Render</span>
+                        </p>
                     </article>
                 </section>
             </main>
