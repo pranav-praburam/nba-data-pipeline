@@ -8,3 +8,4 @@ __pycache__
 *.pyd
 .DS_Store
 data
+!data/games_seed.csv
