@@ -188,6 +188,22 @@ Expected result:
 
 - `http://localhost:8000/health` returns `{"status":"ok"}`
 
+## AWS Lightsail Deployment
+
+If you want the site to stay awake for recruiter demos on a small paid budget, this repo now includes a one-VM AWS Lightsail deployment path:
+
+- Compose file: `docker-compose.lightsail.yml`
+- Example env file: `.env.lightsail.example`
+- Full guide: `LIGHTSAIL_DEPLOY.md`
+
+Recommended setup:
+
+- one `$7/month` Lightsail Linux instance
+- Docker Compose
+- FastAPI container
+- PostgreSQL container
+- persistent Docker volume for Postgres data
+
 ## Render Deployment
 
 This repo includes `render.yaml`, which defines:
