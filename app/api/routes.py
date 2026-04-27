@@ -684,7 +684,7 @@ def dashboard(
                             <span class="pill">PostgreSQL</span>
                             <span class="pill">GitHub Actions</span>
                             <span class="pill">scikit-learn</span>
-                            <span class="pill">Render</span>
+                            <span class="pill">AWS Lightsail</span>
                         </p>
                     </article>
                 </section>

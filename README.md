@@ -1,6 +1,6 @@
 # NBA Data Pipeline
 
-A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Docker, and Render. The project ingests real NBA game data, stores it in Postgres, exposes analytics endpoints, tracks ingestion runs, and includes a simple live dashboard.
+A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, scikit-learn, and AWS Lightsail. The project ingests real NBA game data, stores it in Postgres, exposes analytics endpoints, tracks ingestion runs, and includes a live dashboard and prediction UI.
 
 ## Project Highlights
 
@@ -13,14 +13,14 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 
 ## Live Demo
 
-- Dashboard: https://nba-data-pipeline-api.onrender.com/dashboard
-- API docs: https://nba-data-pipeline-api.onrender.com/docs
-- Health check: https://nba-data-pipeline-api.onrender.com/health
-- Recent games: https://nba-data-pipeline-api.onrender.com/games?limit=5
-- Team rankings: https://nba-data-pipeline-api.onrender.com/analytics/team-rankings?metric=points&limit=10&season=2025-26
-- Data quality: https://nba-data-pipeline-api.onrender.com/data-quality/summary
-- Interactive prediction page: https://nba-data-pipeline-api.onrender.com/predict
-- Matchup prediction: https://nba-data-pipeline-api.onrender.com/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
+- Dashboard: http://3.99.187.244/dashboard
+- API docs: http://3.99.187.244/docs
+- Health check: http://3.99.187.244/health
+- Recent games: http://3.99.187.244/games?limit=5
+- Team rankings: http://3.99.187.244/analytics/team-rankings?metric=points&limit=10&season=2025-26
+- Data quality: http://3.99.187.244/data-quality/summary
+- Interactive prediction page: http://3.99.187.244/predict
+- Matchup prediction: http://3.99.187.244/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
 
 Recommended demo path:
 
@@ -40,7 +40,7 @@ Recommended demo path:
 - Pipeline observability with a `pipeline_runs` table
 - Current-season and historical-season filtering
 - Dockerized deployment
-- Cloud deployment with Render and managed Postgres
+- Cloud deployment on AWS Lightsail with Docker Compose
 - Analytics endpoints and a live HTML dashboard
 - Automated endpoint tests with GitHub Actions CI
 - Tuned ML training pipeline for matchup win probability
@@ -52,7 +52,7 @@ nba_api
   -> ingest_games.py
   -> PostgreSQL games + pipeline_runs tables
   -> FastAPI analytics endpoints
-  -> Render-hosted API + dashboard
+  -> AWS Lightsail-hosted API + dashboard
 ```
 
 ## API Endpoints
@@ -126,15 +126,15 @@ Expected result:
 
 This repo includes `.github/workflows/daily-ingestion.yml`, which triggers an incremental current-season ingestion every day at 11:30 UTC and can also be triggered manually from GitHub Actions.
 
-The workflow calls the deployed Render API instead of fetching NBA data directly from GitHub Actions. This avoids GitHub runner timeouts against `stats.nba.com` and keeps ingestion close to the deployed database.
+The workflow calls the deployed AWS Lightsail API instead of fetching NBA data directly from GitHub Actions. This avoids GitHub runner timeouts against `stats.nba.com` and keeps ingestion close to the deployed database.
 
 ```text
-POST https://nba-data-pipeline-api.onrender.com/admin/ingest?season=2025-26
+POST http://3.99.187.244/admin/ingest?season=2025-26
 ```
 
 Expected result:
 
-- GitHub Actions receives an immediate `accepted` response from Render
+- GitHub Actions receives an immediate `accepted` response from the deployed API
 - New NBA team-game rows are inserted when new games are available
 - Existing rows are skipped by the `(game_id, team_id)` uniqueness rule
 - Every scheduled run is recorded in `pipeline_runs`
@@ -225,15 +225,15 @@ This repo includes `render.yaml`, which defines:
 - a managed Render Postgres database
 - automatic `DATABASE_URL` wiring from the database to the web service
 
-After a successful Render deploy, the production database starts empty. Populate it by running ingestion against the Render external database URL.
+Render remains in the repo as an alternate deployment path, but AWS Lightsail is now the primary always-on deployment for recruiter-facing demos.
 
 ## Resume Summary
 
-Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, scikit-learn, and Render. Implemented idempotent incremental ingestion from NBA data sources, scheduled daily refreshes, pipeline run tracking, analytics endpoints, tuned ML model training, and a live dashboard backed by real NBA game data.
+Built and deployed an NBA data pipeline using FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, scikit-learn, and AWS Lightsail. Implemented idempotent incremental ingestion from NBA data sources, scheduled daily refreshes, pipeline run tracking, analytics endpoints, tuned ML model training, and a live dashboard backed by real NBA game data.
 
 Resume bullets:
 
-- Built a deployed NBA analytics pipeline with FastAPI, PostgreSQL, SQLAlchemy, Docker, Render, and GitHub Actions.
+- Built a deployed NBA analytics pipeline with FastAPI, PostgreSQL, SQLAlchemy, Docker, AWS Lightsail, and GitHub Actions.
 - Implemented idempotent incremental ingestion, scheduled refreshes, pipeline run tracking, and data quality endpoints.
 - Trained and served a tuned scikit-learn logistic regression model for matchup win probability using rolling team-form and point-differential features.
 - Designed API endpoints and a live dashboard for analytics, ingestion health, and model-backed predictions.

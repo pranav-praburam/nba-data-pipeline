@@ -18,13 +18,13 @@ def trigger_ingestion(
     full_refresh: bool = False,
     source: str = Query(default="live", pattern="^(live|stats)$"),
 ):
-    # GitHub Actions and manual Render checks call this endpoint to trigger
+    # GitHub Actions and manual deployment checks call this endpoint to trigger
     # ingestion without exposing database credentials outside the deployed service.
     background_tasks.add_task(run_ingestion_job, season, full_refresh, source)
 
     return {
         "status": "accepted",
-        "trigger": "render_api",
+        "trigger": "deployed_api",
         "season": season,
         "full_refresh": full_refresh,
         "source": source,

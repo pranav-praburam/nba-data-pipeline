@@ -256,5 +256,5 @@ def test_admin_ingestion_endpoint_starts_background_job(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["status"] == "accepted"
-    assert response.json()["trigger"] == "render_api"
+    assert response.json()["trigger"] == "deployed_api"
     assert calls == [{"season": "2025-26", "full_refresh": False, "source": "live"}]

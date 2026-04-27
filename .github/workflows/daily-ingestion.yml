@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      RENDER_API_URL: "https://nba-data-pipeline-api.onrender.com"
+      DEPLOYED_API_URL: "http://3.99.187.244"
       NBA_SEASON: "2025-26"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
-      - name: Trigger Render ingestion
+      - name: Trigger AWS Lightsail ingestion
         run: |
           curl --fail-with-body --show-error --silent --max-time 240 \
             --request POST \
-            "$RENDER_API_URL/admin/ingest?season=$NBA_SEASON"
+            "$DEPLOYED_API_URL/admin/ingest?season=$NBA_SEASON"
