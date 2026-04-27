@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DEPLOYED_API_URL: "http://3.99.187.244"
+      DEPLOYED_API_URL: "http://16.54.146.35"
       NBA_SEASON: "2025-26"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 

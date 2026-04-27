@@ -13,14 +13,14 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 
 ## Live Demo
 
-- Dashboard: http://3.99.187.244/dashboard
-- API docs: http://3.99.187.244/docs
-- Health check: http://3.99.187.244/health
-- Recent games: http://3.99.187.244/games?limit=5
-- Team rankings: http://3.99.187.244/analytics/team-rankings?metric=points&limit=10&season=2025-26
-- Data quality: http://3.99.187.244/data-quality/summary
-- Interactive prediction page: http://3.99.187.244/predict
-- Matchup prediction: http://3.99.187.244/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
+- Dashboard: http://16.54.146.35/dashboard
+- API docs: http://16.54.146.35/docs
+- Health check: http://16.54.146.35/health
+- Recent games: http://16.54.146.35/games?limit=5
+- Team rankings: http://16.54.146.35/analytics/team-rankings?metric=points&limit=10&season=2025-26
+- Data quality: http://16.54.146.35/data-quality/summary
+- Interactive prediction page: http://16.54.146.35/predict
+- Matchup prediction: http://16.54.146.35/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
 
 Recommended demo path:
 
@@ -129,7 +129,7 @@ This repo includes `.github/workflows/daily-ingestion.yml`, which triggers an in
 The workflow calls the deployed AWS Lightsail API instead of fetching NBA data directly from GitHub Actions. This avoids GitHub runner timeouts against `stats.nba.com` and keeps ingestion close to the deployed database.
 
 ```text
-POST http://3.99.187.244/admin/ingest?season=2025-26
+POST http://16.54.146.35/admin/ingest?season=2025-26
 ```
 
 Expected result:
