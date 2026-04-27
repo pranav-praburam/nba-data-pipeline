@@ -109,6 +109,19 @@ Expected result:
 
 The project currently supports both the 2024-25 and 2025-26 seasons. The dashboard defaults to the latest loaded season.
 
+## AWS Bootstrap Seed
+
+When moving the project to a brand new server where historical NBA API backfills may time out, you can bootstrap the database from the included seed snapshot:
+
+```bash
+python scripts/seed_games_from_csv.py
+```
+
+Expected result:
+
+- the `games` table is populated from `data/games_seed.csv`
+- rerunning the script is safe because duplicate `(game_id, team_id)` rows are skipped
+
 ## Scheduled Ingestion
 
 This repo includes `.github/workflows/daily-ingestion.yml`, which triggers an incremental current-season ingestion every day at 11:30 UTC and can also be triggered manually from GitHub Actions.
