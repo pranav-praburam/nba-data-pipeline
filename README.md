@@ -1,26 +1,36 @@
 # NBA Data Pipeline
 
-A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, scikit-learn, and AWS Lightsail. The project ingests real NBA game data, stores it in Postgres, exposes analytics endpoints, tracks ingestion runs, and includes a live dashboard and prediction UI.
+A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Docker, GitHub Actions, scikit-learn, and AWS Lightsail. The project ingests real NBA game data, stores it in PostgreSQL, exposes analytics endpoints, tracks pipeline runs, and includes a live dashboard and prediction UI.
 
 ## Project Highlights
 
 - Automated data pipeline with incremental, idempotent NBA game ingestion
 - Production-style observability through `pipeline_runs`
-- Deployed FastAPI service backed by managed PostgreSQL
+- Deployed FastAPI service running on AWS Lightsail with PostgreSQL in Docker
 - Live dashboard for analytics, ingestion health, and ML prediction
 - Tuned scikit-learn model served through an API endpoint
 - GitHub Actions for CI and scheduled ingestion triggers
 
 ## Live Demo
 
-- Dashboard: http://16.54.146.35/dashboard
-- API docs: http://16.54.146.35/docs
-- Health check: http://16.54.146.35/health
-- Recent games: http://16.54.146.35/games?limit=5
-- Team rankings: http://16.54.146.35/analytics/team-rankings?metric=points&limit=10&season=2025-26
-- Data quality: http://16.54.146.35/data-quality/summary
-- Interactive prediction page: http://16.54.146.35/predict
-- Matchup prediction: http://16.54.146.35/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10
+- [Dashboard](http://16.54.146.35/dashboard)
+- [Prediction Page](http://16.54.146.35/predict)
+- [API Docs](http://16.54.146.35/docs)
+- [Health Check](http://16.54.146.35/health)
+- [Recent Games](http://16.54.146.35/games?limit=5)
+- [Team Rankings](http://16.54.146.35/analytics/team-rankings?metric=points&limit=10&season=2025-26)
+- [Data Quality](http://16.54.146.35/data-quality/summary)
+- [Prediction API Example](http://16.54.146.35/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10)
+
+## Public Access
+
+These links are public. Anyone with a browser can open them on Mac, Windows, Linux, iPhone, or Android without logging in or installing anything.
+
+Best recruiter-friendly links:
+
+- [Main dashboard](http://16.54.146.35/dashboard)
+- [Interactive prediction page](http://16.54.146.35/predict)
+- [API docs](http://16.54.146.35/docs)
 
 Recommended demo path:
 
@@ -216,16 +226,6 @@ Recommended setup:
 - FastAPI container
 - PostgreSQL container
 - persistent Docker volume for Postgres data
-
-## Render Deployment
-
-This repo includes `render.yaml`, which defines:
-
-- a Docker-based FastAPI web service
-- a managed Render Postgres database
-- automatic `DATABASE_URL` wiring from the database to the web service
-
-Render remains in the repo as an alternate deployment path, but AWS Lightsail is now the primary always-on deployment for recruiter-facing demos.
 
 ## Resume Summary
 
