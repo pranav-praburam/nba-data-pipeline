@@ -491,6 +491,18 @@ def dashboard(
                     align-items: center;
                     margin: 14px 0;
                 }}
+                .section-divider {{
+                    height: 1px;
+                    background: var(--line);
+                    margin: 24px 0 20px;
+                }}
+                .subcard {{
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 255, 0.92));
+                    border: 1px solid var(--line);
+                    border-radius: 22px;
+                    padding: 18px 20px;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+                }}
                 .bar-track {{
                     height: 16px;
                     background: rgba(197, 231, 255, 0.52);
@@ -673,6 +685,11 @@ def dashboard(
                     <article class="card">
                         <h2>Top Teams by Average Points</h2>
                         {points_rows}
+                        <div class="section-divider"></div>
+                        <div class="subcard">
+                            <h2>Top 3PT% Teams</h2>
+                            <ul>{three_point_rows}</ul>
+                        </div>
                     </article>
 
                     <aside>
@@ -687,10 +704,6 @@ def dashboard(
                         <div class="stat">
                             <strong>{escape(str(latest_game_date or "n/a"))}</strong>
                             <span>latest loaded game date</span>
-                        </div>
-                        <div class="card">
-                            <h2>Top 3PT% Teams</h2>
-                            <ul>{three_point_rows}</ul>
                         </div>
                         <div class="card prediction-card">
                             <h2>ML Matchup Prediction</h2>
