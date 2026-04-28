@@ -463,6 +463,7 @@ def dashboard(
                     display: grid;
                     grid-template-columns: 1.35fr 0.65fr;
                     gap: 22px;
+                    align-items: start;
                 }}
                 .hero-strip {{
                     display: grid;
