@@ -168,13 +168,16 @@ def prediction_page(
             <title>NBA Matchup Predictor</title>
             <style>
                 :root {{
-                    --ink: #17202a;
-                    --muted: #64748b;
-                    --court: #edb458;
-                    --paint: #174ea6;
-                    --rim: #d1495b;
-                    --paper: #fffaf0;
-                    --line: rgba(23, 32, 42, 0.14);
+                    --bg: #2b2139;
+                    --ink: #eef4ff;
+                    --muted: #aab3d2;
+                    --court: #b14565;
+                    --paint: #82b8c9;
+                    --rim: #6277b8;
+                    --paper: rgba(57, 45, 76, 0.92);
+                    --panel-alt: rgba(80, 92, 146, 0.16);
+                    --line: rgba(130, 184, 201, 0.18);
+                    --shadow: rgba(7, 7, 17, 0.42);
                 }}
                 * {{ box-sizing: border-box; }}
                 body {{
@@ -183,10 +186,11 @@ def prediction_page(
                     font-family: Georgia, "Times New Roman", serif;
                     color: var(--ink);
                     background:
-                        linear-gradient(90deg, rgba(23, 78, 166, 0.08) 1px, transparent 1px),
-                        linear-gradient(0deg, rgba(23, 78, 166, 0.08) 1px, transparent 1px),
-                        radial-gradient(circle at 12% 10%, rgba(237, 180, 88, 0.58), transparent 28rem),
-                        linear-gradient(135deg, #fff8ea 0%, #e8f1ff 100%);
+                        linear-gradient(90deg, rgba(130, 184, 201, 0.08) 1px, transparent 1px),
+                        linear-gradient(0deg, rgba(130, 184, 201, 0.08) 1px, transparent 1px),
+                        radial-gradient(circle at 12% 10%, rgba(177, 69, 101, 0.25), transparent 26rem),
+                        radial-gradient(circle at 82% 16%, rgba(98, 119, 184, 0.2), transparent 24rem),
+                        linear-gradient(135deg, #23192f 0%, #2b2139 55%, #342846 100%);
                     background-size: 48px 48px, 48px 48px, auto, auto;
                 }}
                 main {{
@@ -195,10 +199,10 @@ def prediction_page(
                     padding: 44px 0;
                 }}
                 .card {{
-                    background: rgba(255, 250, 240, 0.9);
+                    background: var(--paper);
                     border: 1px solid var(--line);
                     border-radius: 30px;
-                    box-shadow: 0 24px 80px rgba(23, 32, 42, 0.12);
+                    box-shadow: 0 24px 80px var(--shadow);
                     padding: 28px;
                     backdrop-filter: blur(10px);
                 }}
@@ -233,7 +237,7 @@ def prediction_page(
                     width: 100%;
                     border: 1px solid var(--line);
                     border-radius: 16px;
-                    background: #fff;
+                    background: rgba(80, 92, 146, 0.18);
                     color: var(--ink);
                     font: inherit;
                     padding: 12px 14px;
@@ -241,8 +245,8 @@ def prediction_page(
                 button, a.button {{
                     border: 0;
                     border-radius: 999px;
-                    background: var(--court);
-                    color: #17202a;
+                    background: linear-gradient(135deg, var(--court), #8f3651);
+                    color: #f7fbff;
                     cursor: pointer;
                     display: inline-block;
                     font: inherit;
@@ -258,7 +262,7 @@ def prediction_page(
                 }}
                 .winner {{
                     grid-column: 1 / -1;
-                    background: linear-gradient(135deg, #17202a, #174ea6);
+                    background: linear-gradient(135deg, #332643, #505c92);
                     color: #fff;
                     border-radius: 24px;
                     padding: 24px;
@@ -270,7 +274,7 @@ def prediction_page(
                     line-height: 0.95;
                 }}
                 .probability {{
-                    background: #fff;
+                    background: var(--panel-alt);
                     border: 1px solid var(--line);
                     border-radius: 20px;
                     padding: 18px;
@@ -282,7 +286,7 @@ def prediction_page(
                 }}
                 .bar {{
                     height: 12px;
-                    background: rgba(23, 78, 166, 0.12);
+                    background: rgba(130, 184, 201, 0.14);
                     border-radius: 999px;
                     margin-top: 12px;
                     overflow: hidden;
@@ -290,7 +294,7 @@ def prediction_page(
                 .bar span {{
                     display: block;
                     height: 100%;
-                    background: linear-gradient(90deg, var(--paint), var(--rim));
+                    background: linear-gradient(90deg, var(--paint), var(--court), var(--rim));
                     border-radius: inherit;
                 }}
                 nav {{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }}
