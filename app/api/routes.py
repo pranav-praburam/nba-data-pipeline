@@ -306,7 +306,7 @@ def dashboard(
     # helper functions as the JSON endpoints so charts, stats, and endpoints agree.
     season_year = normalize_season_year(season) or latest_season_year(db)
     season_label = season_display_name(season_year)
-    top_scoring_teams = team_rankings(metric="points", limit=8, season=season_year, db=db)
+    top_scoring_teams = team_rankings(metric="points", limit=20, season=season_year, db=db)
     three_point_teams = team_rankings(metric="fg3_pct", limit=5, season=season_year, db=db)
     recent_games = (
         season_query(nba_team_query(db.query(Game)), season_year)
@@ -683,7 +683,7 @@ def dashboard(
 
                 <section class="grid">
                     <article class="card">
-                        <h2>Top Teams by Average Points</h2>
+                        <h2>Top 20 Teams by Average Points</h2>
                         {points_rows}
                         <div class="section-divider"></div>
                         <div class="subcard">
