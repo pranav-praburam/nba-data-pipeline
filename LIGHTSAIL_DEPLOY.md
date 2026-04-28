@@ -104,10 +104,15 @@ nano .env.lightsail
 Update at least:
 
 - `POSTGRES_PASSWORD`
+- `INGEST_API_KEY`
+- `APP_PUBLIC_BASE_URL`
+- `ALLOWED_HOSTS`
 
 Expected result:
 
 - `.env.lightsail` contains your real password instead of the placeholder.
+- `.env.lightsail` contains a long random ingestion API key used by GitHub Actions.
+- `.env.lightsail` contains the public URL or static IP used to derive the deployed host allowlist.
 
 ## Step 7: Start the App
 
@@ -164,16 +169,28 @@ Expected result:
 
 Your current GitHub Actions workflow can keep working if it points to the deployed API.
 
-Update the workflow secret or environment value that currently references Render so it uses:
+Add the following GitHub repository secrets:
+
+- `DEPLOYED_API_URL`
+- `INGEST_API_KEY`
+
+Example:
 
 ```text
-http://YOUR_LIGHTSAIL_IP
+DEPLOYED_API_URL=http://YOUR_LIGHTSAIL_IP
+INGEST_API_KEY=your_long_random_ingestion_key
 ```
 
 Expected result:
 
 - Daily scheduled ingestion continues to hit `/admin/ingest`
 - New rows keep loading without manual work
+
+Security notes:
+
+- Never commit `.env.lightsail` to GitHub.
+- Keep `INGEST_API_KEY` only in GitHub Secrets and on the Lightsail box.
+- When the public IP or domain changes, update `APP_PUBLIC_BASE_URL`, `ALLOWED_HOSTS`, and `DEPLOYED_API_URL` together before rebuilding the containers.
 
 ## Step 11: Deploy Future Code Changes
 

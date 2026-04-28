@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
@@ -5,6 +6,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+os.environ["INGEST_API_KEY"] = "test-ingest-key"
 
 from app.api.routes import router
 from app.db.database import Base, get_db
@@ -252,9 +255,54 @@ def test_admin_ingestion_endpoint_starts_background_job(monkeypatch):
 
     monkeypatch.setattr("ingest_games.ingest_games", fake_ingest_games)
 
-    response = client.post("/admin/ingest?season=2025-26")
+    response = client.post(
+        "/admin/ingest?season=2025-26",
+        headers={"X-API-Key": "test-ingest-key"},
+    )
 
     assert response.status_code == 200
     assert response.json()["status"] == "accepted"
     assert response.json()["trigger"] == "deployed_api"
     assert calls == [{"season": "2025-26", "full_refresh": False, "source": "live"}]
+
+
+def test_admin_ingestion_endpoint_rejects_missing_api_key():
+    response = client.post("/admin/ingest?season=2025-26")
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid ingestion API key."
+
+
+def test_admin_ingestion_endpoint_rejects_excessive_requests(monkeypatch):
+    from app.api import admin as admin_module
+
+    admin_module.admin_request_history.clear()
+
+    def fake_ingest_games(season, full_refresh=False, source="stats"):
+        return {
+            "season": season,
+            "mode": "incremental",
+            "rows_fetched": 0,
+            "rows_inserted": 0,
+            "rows_skipped": 0,
+            "status": "success",
+        }
+
+    monkeypatch.setattr("ingest_games.ingest_games", fake_ingest_games)
+
+    for _ in range(admin_module.ADMIN_RATE_LIMIT):
+        response = client.post(
+            "/admin/ingest?season=2025-26",
+            headers={"X-API-Key": "test-ingest-key"},
+        )
+        assert response.status_code == 200
+
+    throttled_response = client.post(
+        "/admin/ingest?season=2025-26",
+        headers={"X-API-Key": "test-ingest-key"},
+    )
+
+    assert throttled_response.status_code == 429
+    assert "Too many admin ingestion requests" in throttled_response.json()["detail"]
+
+    admin_module.admin_request_history.clear()

@@ -10,13 +10,20 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DEPLOYED_API_URL: "http://16.54.146.35"
+      DEPLOYED_API_URL: ${{ secrets.DEPLOYED_API_URL }}
+      INGEST_API_KEY: ${{ secrets.INGEST_API_KEY }}
       NBA_SEASON: "2025-26"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
+      - name: Verify deployment secrets
+        run: |
+          test -n "$DEPLOYED_API_URL"
+          test -n "$INGEST_API_KEY"
+
       - name: Trigger AWS Lightsail ingestion
         run: |
           curl --fail-with-body --show-error --silent --max-time 240 \
             --request POST \
+            --header "X-API-Key: $INGEST_API_KEY" \
             "$DEPLOYED_API_URL/admin/ingest?season=$NBA_SEASON"

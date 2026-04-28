@@ -32,6 +32,15 @@ Best recruiter-friendly links:
 - [Interactive prediction page](http://16.54.146.35/predict)
 - [API docs](http://16.54.146.35/docs)
 
+## Security Notes
+
+- Public read-only endpoints are available to anyone with the link.
+- The admin ingestion endpoint is protected by an `X-API-Key` header via `INGEST_API_KEY`.
+- GitHub Actions stores `DEPLOYED_API_URL` and `INGEST_API_KEY` as repository secrets instead of hardcoding them in workflow files.
+- Trusted host checks, basic browser security headers, and admin endpoint rate limiting are enabled in the FastAPI app.
+- The current site is public over `http://` by IP address. For real browser-trusted TLS encryption, move to a custom domain and terminate HTTPS with a reverse proxy such as Caddy or Nginx.
+- The deployed host allowlist now comes from `ALLOWED_HOSTS` and `APP_PUBLIC_BASE_URL`, so deployment-specific access stays in environment config rather than source code.
+
 Recommended demo path:
 
 1. Open the dashboard and point out live database metrics, pipeline status, ML model metrics, and the editable matchup prediction form.
@@ -136,11 +145,7 @@ Expected result:
 
 This repo includes `.github/workflows/daily-ingestion.yml`, which triggers an incremental current-season ingestion every day at 11:30 UTC and can also be triggered manually from GitHub Actions.
 
-The workflow calls the deployed AWS Lightsail API instead of fetching NBA data directly from GitHub Actions. This avoids GitHub runner timeouts against `stats.nba.com` and keeps ingestion close to the deployed database.
-
-```text
-POST http://16.54.146.35/admin/ingest?season=2025-26
-```
+The workflow calls the deployed AWS Lightsail API instead of fetching NBA data directly from GitHub Actions. This avoids GitHub runner timeouts against `stats.nba.com`, keeps ingestion close to the deployed database, and keeps the admin key out of the repository by reading `DEPLOYED_API_URL` and `INGEST_API_KEY` from GitHub Secrets.
 
 Expected result:
 
@@ -149,6 +154,12 @@ Expected result:
 - Existing rows are skipped by the `(game_id, team_id)` uniqueness rule
 - Every scheduled run is recorded in `pipeline_runs`
 - Ingestion success or failure is visible in `/pipeline/runs`
+
+Security reminder:
+
+- Do not publish your `INGEST_API_KEY` in screenshots, bookmarks, or chat messages.
+- Keep `DEPLOYED_API_URL` and `INGEST_API_KEY` only in GitHub repository secrets and the server's `.env.lightsail`.
+- If you rotate the Lightsail IP or move to a custom domain, update `APP_PUBLIC_BASE_URL`, `ALLOWED_HOSTS`, and the `DEPLOYED_API_URL` GitHub secret together.
 
 ## ML Baseline Training
 
@@ -244,3 +255,4 @@ Resume bullets:
 - Add a richer frontend dashboard with interactive charts
 - Add model monitoring charts and prediction outcome evaluation
 - Expand CI to include linting and deployment smoke tests
+- Add a custom domain plus HTTPS reverse proxy so the public site has browser-trusted TLS

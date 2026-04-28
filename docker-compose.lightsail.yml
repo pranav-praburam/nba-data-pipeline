@@ -29,6 +29,10 @@ services:
       NBA_SEASON: ${NBA_SEASON:-2025-26}
       NBA_API_TIMEOUT: ${NBA_API_TIMEOUT:-90}
       NBA_API_RETRIES: ${NBA_API_RETRIES:-3}
+      INGEST_API_KEY: ${INGEST_API_KEY:-}
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:-}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,::1}
+      ENABLE_DOCS: ${ENABLE_DOCS:-true}
       PORT: 8000
     ports:
       - "80:8000"
