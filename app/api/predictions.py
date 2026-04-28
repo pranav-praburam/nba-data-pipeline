@@ -178,12 +178,15 @@ def prediction_page(
                     --panel-alt: rgba(80, 92, 146, 0.16);
                     --line: rgba(130, 184, 201, 0.18);
                     --shadow: rgba(7, 7, 17, 0.42);
+                    --font-display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-body: "Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-mono: "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
                 }}
                 * {{ box-sizing: border-box; }}
                 body {{
                     margin: 0;
                     min-height: 100vh;
-                    font-family: Georgia, "Times New Roman", serif;
+                    font-family: var(--font-body);
                     color: var(--ink);
                     background:
                         linear-gradient(90deg, rgba(130, 184, 201, 0.08) 1px, transparent 1px),
@@ -208,12 +211,15 @@ def prediction_page(
                 }}
                 h1 {{
                     margin: 0 0 14px;
+                    font-family: var(--font-display);
+                    font-weight: 700;
                     font-size: clamp(2.4rem, 7vw, 5rem);
-                    line-height: 0.9;
-                    letter-spacing: -0.075em;
+                    line-height: 0.92;
+                    letter-spacing: -0.055em;
                 }}
                 .eyebrow {{
                     color: var(--paint);
+                    font-family: var(--font-mono);
                     font-weight: 700;
                     letter-spacing: 0.16em;
                     text-transform: uppercase;
@@ -228,6 +234,7 @@ def prediction_page(
                     align-items: end;
                 }}
                 label {{
+                    font-family: var(--font-mono);
                     display: grid;
                     gap: 6px;
                     color: var(--muted);
@@ -269,6 +276,8 @@ def prediction_page(
                 }}
                 .winner strong {{
                     display: block;
+                    font-family: var(--font-display);
+                    font-weight: 700;
                     font-size: clamp(2rem, 6vw, 4rem);
                     letter-spacing: -0.06em;
                     line-height: 0.95;
@@ -281,6 +290,8 @@ def prediction_page(
                 }}
                 .probability strong {{
                     display: block;
+                    font-family: var(--font-display);
+                    font-weight: 700;
                     font-size: 2.2rem;
                     letter-spacing: -0.05em;
                 }}
@@ -298,7 +309,7 @@ def prediction_page(
                     border-radius: inherit;
                 }}
                 nav {{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }}
-                nav a {{ color: var(--paint); font-weight: 700; text-decoration: none; }}
+                nav a {{ color: var(--paint); font-family: var(--font-mono); font-weight: 700; text-decoration: none; }}
                 @media (max-width: 760px) {{
                     form, .result {{ grid-template-columns: 1fr; }}
                     .winner {{ grid-column: auto; }}

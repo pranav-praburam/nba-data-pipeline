@@ -63,11 +63,14 @@ def home(db: Session = Depends(get_db)):
                     --panel-alt: rgba(72, 60, 98, 0.86);
                     --line: rgba(130, 184, 201, 0.18);
                     --shadow: rgba(7, 7, 17, 0.42);
+                    --font-display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-body: "Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-mono: "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
                 }
                 * { box-sizing: border-box; }
                 body {
                     margin: 0;
-                    font-family: Georgia, "Times New Roman", serif;
+                    font-family: var(--font-body);
                     color: var(--ink);
                     background:
                         radial-gradient(circle at top left, rgba(129, 183, 200, 0.22), transparent 28rem),
@@ -95,15 +98,19 @@ def home(db: Session = Depends(get_db)):
                     backdrop-filter: blur(10px);
                 }
                 h1 {
+                    font-family: var(--font-display);
+                    font-weight: 700;
                     font-size: clamp(2.4rem, 8vw, 5.8rem);
-                    line-height: 0.9;
-                    letter-spacing: -0.08em;
+                    line-height: 0.92;
+                    letter-spacing: -0.06em;
                     margin: 0 0 20px;
                 }
                 h2 {
+                    font-family: var(--font-mono);
+                    font-weight: 600;
                     font-size: 1.1rem;
                     text-transform: uppercase;
-                    letter-spacing: 0.16em;
+                    letter-spacing: 0.18em;
                     margin: 0 0 18px;
                     color: var(--paint);
                 }
@@ -126,11 +133,14 @@ def home(db: Session = Depends(get_db)):
                     background: var(--panel-alt);
                 }
                 .metric strong {
+                    font-family: var(--font-display);
+                    font-weight: 700;
                     display: block;
                     font-size: 2rem;
                     letter-spacing: -0.05em;
                 }
                 .metric span {
+                    font-family: var(--font-mono);
                     color: var(--muted);
                     font-size: 0.9rem;
                 }
@@ -180,6 +190,7 @@ def home(db: Session = Depends(get_db)):
                     margin-top: 22px;
                 }
                 a {
+                    font-family: var(--font-body);
                     color: var(--paint);
                     font-weight: 700;
                     text-decoration: none;
@@ -394,11 +405,14 @@ def dashboard(
                     --panel: rgba(57, 45, 76, 0.9);
                     --line: rgba(130, 184, 201, 0.18);
                     --shadow: rgba(7, 7, 17, 0.42);
+                    --font-display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-body: "Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-mono: "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
                 }}
                 * {{ box-sizing: border-box; }}
                 body {{
                     margin: 0;
-                    font-family: Georgia, "Times New Roman", serif;
+                    font-family: var(--font-body);
                     color: var(--ink);
                     background:
                         linear-gradient(90deg, rgba(130, 184, 201, 0.08) 1px, transparent 1px),
@@ -423,18 +437,21 @@ def dashboard(
                 }}
                 h1 {{
                     margin: 0;
+                    font-family: var(--font-display);
+                    font-weight: 700;
                     font-size: clamp(2.4rem, 7vw, 5rem);
-                    line-height: 0.9;
-                    letter-spacing: -0.075em;
+                    line-height: 0.92;
+                    letter-spacing: -0.055em;
                 }}
                 .eyebrow {{
                     color: var(--paint);
+                    font-family: var(--font-mono);
                     font-weight: 700;
                     letter-spacing: 0.16em;
                     text-transform: uppercase;
                     font-size: 0.8rem;
                 }}
-                a {{ color: var(--paint); font-weight: 700; text-decoration: none; }}
+                a {{ color: var(--paint); font-family: var(--font-body); font-weight: 700; text-decoration: none; }}
                 .grid {{
                     display: grid;
                     grid-template-columns: 1.35fr 0.65fr;
@@ -454,7 +471,7 @@ def dashboard(
                     padding: 24px;
                     backdrop-filter: blur(10px);
                 }}
-                h2 {{ margin: 0 0 18px; font-size: 1.1rem; letter-spacing: -0.02em; }}
+                h2 {{ margin: 0 0 18px; font-family: var(--font-display); font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }}
                 .bar-row {{
                     display: grid;
                     grid-template-columns: 190px 1fr 64px;
@@ -481,7 +498,8 @@ def dashboard(
                     margin-bottom: 16px;
                 }}
                 .stat strong {{ display: block; font-size: 2rem; letter-spacing: -0.05em; }}
-                .stat span {{ color: var(--muted); }}
+                .stat strong, .mini-stat strong {{ font-family: var(--font-display); font-weight: 700; }}
+                .stat span {{ color: var(--muted); font-family: var(--font-mono); }}
                 .mini-stat {{
                     background: rgba(80, 92, 146, 0.16);
                     border: 1px solid var(--line);
@@ -494,6 +512,7 @@ def dashboard(
                     letter-spacing: -0.05em;
                 }}
                 .mini-stat span {{
+                    font-family: var(--font-mono);
                     color: var(--muted);
                     font-size: 0.9rem;
                 }}
@@ -577,9 +596,11 @@ def dashboard(
                     font-size: 0.95rem;
                 }}
                 th {{ color: var(--muted); font-weight: 700; }}
+                th {{ font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.78rem; }}
                 .full {{ grid-column: 1 / -1; }}
                 .nav {{ display: flex; gap: 12px; flex-wrap: wrap; }}
                 .pill {{
+                    font-family: var(--font-mono);
                     display: inline-block;
                     padding: 8px 12px;
                     border-radius: 999px;
