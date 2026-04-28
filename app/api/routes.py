@@ -52,19 +52,20 @@ def home(db: Session = Depends(get_db)):
             <title>NBA Data Pipeline</title>
             <style>
                 :root {
-                    --bg: #2b2139;
-                    --ink: #eef4ff;
-                    --muted: #aab3d2;
-                    --court: #b14565;
-                    --paint: #82b8c9;
-                    --paint-strong: #6277b8;
-                    --indigo: #505c92;
-                    --paper: rgba(57, 45, 76, 0.9);
-                    --panel-alt: rgba(72, 60, 98, 0.86);
-                    --line: rgba(130, 184, 201, 0.18);
-                    --shadow: rgba(7, 7, 17, 0.42);
-                    --font-display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-                    --font-body: "Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --bg: #eef8ff;
+                    --ink: #18415f;
+                    --muted: #5a86a2;
+                    --aqua: #67e3da;
+                    --sky: #8dc8ff;
+                    --lime: #dff7a6;
+                    --pink: #ff93c2;
+                    --violet: #c6b5ff;
+                    --glass: rgba(255, 255, 255, 0.68);
+                    --glass-strong: rgba(255, 255, 255, 0.82);
+                    --line: rgba(120, 198, 233, 0.34);
+                    --shadow: rgba(64, 149, 207, 0.2);
+                    --font-display: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-body: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
                     --font-mono: "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
                 }
                 * { box-sizing: border-box; }
@@ -73,9 +74,10 @@ def home(db: Session = Depends(get_db)):
                     font-family: var(--font-body);
                     color: var(--ink);
                     background:
-                        radial-gradient(circle at top left, rgba(129, 183, 200, 0.22), transparent 28rem),
-                        radial-gradient(circle at 85% 15%, rgba(177, 69, 101, 0.22), transparent 24rem),
-                        linear-gradient(135deg, #23192f 0%, #2b2139 50%, #342846 100%);
+                        radial-gradient(circle at 18% 16%, rgba(103, 227, 218, 0.72), transparent 22rem),
+                        radial-gradient(circle at 82% 18%, rgba(223, 247, 166, 0.72), transparent 20rem),
+                        radial-gradient(circle at 70% 78%, rgba(255, 147, 194, 0.45), transparent 24rem),
+                        linear-gradient(180deg, #f6fdff 0%, #dff3ff 42%, #d6e8ff 72%, #fefbff 100%);
                     min-height: 100vh;
                 }
                 main {
@@ -90,12 +92,16 @@ def home(db: Session = Depends(get_db)):
                     align-items: stretch;
                 }
                 .card {
-                    background: var(--paper);
+                    background:
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(237, 249, 255, 0.72)),
+                        var(--glass);
                     border: 1px solid var(--line);
                     border-radius: 28px;
-                    box-shadow: 0 24px 80px var(--shadow);
+                    box-shadow:
+                        0 24px 80px var(--shadow),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.9);
                     padding: 28px;
-                    backdrop-filter: blur(10px);
+                    backdrop-filter: blur(18px) saturate(135%);
                 }
                 h1 {
                     font-family: var(--font-display);
@@ -112,7 +118,7 @@ def home(db: Session = Depends(get_db)):
                     text-transform: uppercase;
                     letter-spacing: 0.18em;
                     margin: 0 0 18px;
-                    color: var(--paint);
+                    color: #4ac5cb;
                 }
                 p {
                     font-size: 1.08rem;
@@ -130,7 +136,7 @@ def home(db: Session = Depends(get_db)):
                     border: 1px solid var(--line);
                     border-radius: 20px;
                     padding: 18px;
-                    background: var(--panel-alt);
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(218, 244, 255, 0.68));
                 }
                 .metric strong {
                     font-family: var(--font-display);
@@ -149,14 +155,16 @@ def home(db: Session = Depends(get_db)):
                     min-height: 340px;
                     overflow: hidden;
                     background:
-                        linear-gradient(180deg, rgba(98, 119, 184, 0.18), transparent),
-                        linear-gradient(180deg, #3a2c4f, #2c223b);
+                        radial-gradient(circle at 18% 16%, rgba(103, 227, 218, 0.7), transparent 12rem),
+                        radial-gradient(circle at 84% 12%, rgba(223, 247, 166, 0.8), transparent 10rem),
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(215, 240, 255, 0.78)),
+                        linear-gradient(180deg, #dbf3ff, #f6fbff);
                 }
                 .court::before {
                     content: "";
                     position: absolute;
                     inset: 30px;
-                    border: 3px solid rgba(130, 184, 201, 0.72);
+                    border: 3px solid rgba(113, 201, 227, 0.8);
                     border-radius: 24px;
                 }
                 .court::after {
@@ -164,7 +172,7 @@ def home(db: Session = Depends(get_db)):
                     position: absolute;
                     width: 190px;
                     height: 190px;
-                    border: 3px solid rgba(130, 184, 201, 0.68);
+                    border: 3px solid rgba(113, 201, 227, 0.76);
                     border-radius: 999px;
                     left: 50%;
                     top: 50%;
@@ -175,8 +183,8 @@ def home(db: Session = Depends(get_db)):
                     width: 14px;
                     height: 14px;
                     border-radius: 999px;
-                    background: var(--court);
-                    box-shadow: 0 0 0 8px rgba(177, 69, 101, 0.22);
+                    background: linear-gradient(180deg, #ff7ab8, #6bdbff);
+                    box-shadow: 0 0 0 9px rgba(255, 255, 255, 0.42);
                     animation: pop 900ms ease both;
                 }
                 .shot:nth-child(1) { left: 22%; top: 30%; }
@@ -191,7 +199,7 @@ def home(db: Session = Depends(get_db)):
                 }
                 a {
                     font-family: var(--font-body);
-                    color: var(--paint);
+                    color: #1b6fa1;
                     font-weight: 700;
                     text-decoration: none;
                 }
@@ -199,16 +207,19 @@ def home(db: Session = Depends(get_db)):
                     display: block;
                     border: 1px solid var(--line);
                     border-radius: 18px;
-                    background: rgba(80, 92, 146, 0.18);
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(223, 244, 255, 0.7));
                     padding: 16px;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
                 }
                 .primary-link {
                     display: inline-block;
-                    color: #f7fbff;
-                    background: linear-gradient(135deg, var(--court), #8f3651);
-                    border: 1px solid rgba(177, 69, 101, 0.3);
+                    color: #16435d;
+                    background: linear-gradient(135deg, #7be8df, #fff8a6 55%, #ff9dc6);
+                    border: 1px solid rgba(120, 198, 233, 0.45);
                     border-radius: 999px;
-                    box-shadow: 0 16px 36px rgba(177, 69, 101, 0.24);
+                    box-shadow:
+                        0 16px 36px rgba(111, 190, 225, 0.28),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.95);
                     padding: 14px 18px;
                     margin: 6px 10px 8px 0;
                 }
@@ -216,9 +227,10 @@ def home(db: Session = Depends(get_db)):
                     display: inline-block;
                     border: 1px solid var(--line);
                     border-radius: 999px;
-                    background: rgba(80, 92, 146, 0.22);
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(222, 241, 255, 0.72));
                     padding: 14px 18px;
                     margin: 6px 0 8px;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
                 }
                 .cta-row { margin-top: 22px; }
                 @keyframes pop {
@@ -394,19 +406,20 @@ def dashboard(
             <title>NBA Analytics Dashboard</title>
             <style>
                 :root {{
-                    --bg: #2b2139;
-                    --ink: #eef4ff;
-                    --muted: #aab3d2;
-                    --court: #b14565;
-                    --paint: #82b8c9;
-                    --rim: #6277b8;
-                    --indigo: #505c92;
-                    --paper: #392d4c;
-                    --panel: rgba(57, 45, 76, 0.9);
-                    --line: rgba(130, 184, 201, 0.18);
-                    --shadow: rgba(7, 7, 17, 0.42);
-                    --font-display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-                    --font-body: "Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --bg: #eef8ff;
+                    --ink: #18415f;
+                    --muted: #5a86a2;
+                    --aqua: #67e3da;
+                    --sky: #8dc8ff;
+                    --lime: #dff7a6;
+                    --pink: #ff93c2;
+                    --violet: #c6b5ff;
+                    --panel: rgba(255, 255, 255, 0.72);
+                    --panel-soft: rgba(240, 251, 255, 0.82);
+                    --line: rgba(120, 198, 233, 0.34);
+                    --shadow: rgba(64, 149, 207, 0.18);
+                    --font-display: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-body: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
                     --font-mono: "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
                 }}
                 * {{ box-sizing: border-box; }}
@@ -415,12 +428,13 @@ def dashboard(
                     font-family: var(--font-body);
                     color: var(--ink);
                     background:
-                        linear-gradient(90deg, rgba(130, 184, 201, 0.08) 1px, transparent 1px),
-                        linear-gradient(0deg, rgba(130, 184, 201, 0.08) 1px, transparent 1px),
-                        radial-gradient(circle at 15% 10%, rgba(177, 69, 101, 0.28), transparent 26rem),
-                        radial-gradient(circle at 80% 18%, rgba(98, 119, 184, 0.22), transparent 24rem),
-                        linear-gradient(135deg, #23192f 0%, #2b2139 55%, #342846 100%);
-                    background-size: 48px 48px, 48px 48px, auto, auto;
+                        linear-gradient(90deg, rgba(141, 200, 255, 0.12) 1px, transparent 1px),
+                        linear-gradient(0deg, rgba(141, 200, 255, 0.12) 1px, transparent 1px),
+                        radial-gradient(circle at 14% 12%, rgba(103, 227, 218, 0.75), transparent 20rem),
+                        radial-gradient(circle at 85% 18%, rgba(223, 247, 166, 0.75), transparent 18rem),
+                        radial-gradient(circle at 74% 76%, rgba(255, 147, 194, 0.4), transparent 22rem),
+                        linear-gradient(180deg, #f7fdff 0%, #ddf2ff 38%, #d6e9ff 70%, #fbfcff 100%);
+                    background-size: 48px 48px, 48px 48px, auto, auto, auto;
                     min-height: 100vh;
                 }}
                 main {{
@@ -444,14 +458,14 @@ def dashboard(
                     letter-spacing: -0.055em;
                 }}
                 .eyebrow {{
-                    color: var(--paint);
+                    color: #43c7cb;
                     font-family: var(--font-mono);
                     font-weight: 700;
                     letter-spacing: 0.16em;
                     text-transform: uppercase;
                     font-size: 0.8rem;
                 }}
-                a {{ color: var(--paint); font-family: var(--font-body); font-weight: 700; text-decoration: none; }}
+                a {{ color: #1b6fa1; font-family: var(--font-body); font-weight: 700; text-decoration: none; }}
                 .grid {{
                     display: grid;
                     grid-template-columns: 1.35fr 0.65fr;
@@ -464,12 +478,16 @@ def dashboard(
                     margin-bottom: 22px;
                 }}
                 .card {{
-                    background: var(--panel);
+                    background:
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(235, 249, 255, 0.76)),
+                        var(--panel);
                     border: 1px solid var(--line);
                     border-radius: 28px;
-                    box-shadow: 0 24px 80px var(--shadow);
+                    box-shadow:
+                        0 24px 80px var(--shadow),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.96);
                     padding: 24px;
-                    backdrop-filter: blur(10px);
+                    backdrop-filter: blur(18px) saturate(140%);
                 }}
                 h2 {{ margin: 0 0 18px; font-family: var(--font-display); font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }}
                 .bar-row {{
@@ -481,30 +499,32 @@ def dashboard(
                 }}
                 .bar-track {{
                     height: 16px;
-                    background: rgba(130, 184, 201, 0.14);
+                    background: rgba(141, 200, 255, 0.28);
                     border-radius: 999px;
                     overflow: hidden;
                 }}
                 .bar-fill {{
                     height: 100%;
-                    background: linear-gradient(90deg, var(--paint), var(--court), var(--rim));
+                    background: linear-gradient(90deg, var(--aqua), var(--sky), var(--pink), var(--violet));
                     border-radius: inherit;
                 }}
                 .stat {{
-                    background: rgba(80, 92, 146, 0.16);
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(226, 246, 255, 0.74));
                     border: 1px solid var(--line);
                     border-radius: 20px;
                     padding: 18px;
                     margin-bottom: 16px;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
                 }}
                 .stat strong {{ display: block; font-size: 2rem; letter-spacing: -0.05em; }}
                 .stat strong, .mini-stat strong {{ font-family: var(--font-display); font-weight: 700; }}
                 .stat span {{ color: var(--muted); font-family: var(--font-mono); }}
                 .mini-stat {{
-                    background: rgba(80, 92, 146, 0.16);
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(226, 246, 255, 0.74));
                     border: 1px solid var(--line);
                     border-radius: 22px;
                     padding: 16px;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
                 }}
                 .mini-stat strong {{
                     display: block;
@@ -518,34 +538,38 @@ def dashboard(
                 }}
                 .prediction-card {{
                     margin-top: 16px;
-                    background: linear-gradient(135deg, #332643, #505c92);
-                    color: #fff;
+                    background:
+                        radial-gradient(circle at top left, rgba(123, 232, 223, 0.66), transparent 10rem),
+                        radial-gradient(circle at top right, rgba(223, 247, 166, 0.7), transparent 10rem),
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(232, 247, 255, 0.82));
+                    color: var(--ink);
                 }}
                 .prediction-card p {{
-                    color: rgba(255, 255, 255, 0.78);
+                    color: var(--muted);
                     line-height: 1.55;
                 }}
                 .prediction-card a {{
                     display: inline-block;
-                    color: #f7fbff;
-                    background: linear-gradient(135deg, var(--court), #8f3651);
+                    color: #16435d;
+                    background: linear-gradient(135deg, #7be8df, #fff8a6 55%, #ff9dc6);
                     border-radius: 999px;
                     padding: 10px 14px;
                     margin-top: 6px;
+                    box-shadow: 0 14px 30px rgba(111, 190, 225, 0.24);
                 }}
                 .prediction-result {{
                     display: grid;
                     gap: 4px;
-                    background: rgba(130, 184, 201, 0.08);
-                    border: 1px solid rgba(130, 184, 201, 0.2);
+                    background: rgba(255, 255, 255, 0.64);
+                    border: 1px solid rgba(120, 198, 233, 0.28);
                     border-radius: 18px;
                     padding: 14px;
                     margin: 12px 0;
                 }}
                 .prediction-result strong {{ font-size: 1.5rem; }}
-                .prediction-result span {{ color: rgba(255, 255, 255, 0.78); }}
+                .prediction-result span {{ color: var(--muted); }}
                 .prediction-result .label {{
-                    color: var(--court);
+                    color: #ff73ad;
                     font-size: 0.78rem;
                     font-weight: 700;
                     letter-spacing: 0.16em;
@@ -557,29 +581,30 @@ def dashboard(
                     margin-top: 14px;
                 }}
                 .prediction-form label {{
-                    color: rgba(255, 255, 255, 0.78);
+                    color: var(--muted);
                     font-size: 0.82rem;
                     font-weight: 700;
                 }}
                 .prediction-form input {{
                     width: 100%;
-                    border: 1px solid rgba(130, 184, 201, 0.22);
+                    border: 1px solid rgba(120, 198, 233, 0.28);
                     border-radius: 14px;
-                    background: rgba(130, 184, 201, 0.08);
-                    color: #fff;
+                    background: rgba(255, 255, 255, 0.72);
+                    color: var(--ink);
                     padding: 10px 12px;
                     font: inherit;
                 }}
-                .prediction-form input::placeholder {{ color: rgba(255, 255, 255, 0.55); }}
+                .prediction-form input::placeholder {{ color: #7eabc2; }}
                 .prediction-form button {{
                     border: 0;
                     border-radius: 999px;
-                    background: linear-gradient(135deg, var(--court), #8f3651);
-                    color: #f7fbff;
+                    background: linear-gradient(135deg, #7be8df, #fff8a6 55%, #ff9dc6);
+                    color: #16435d;
                     cursor: pointer;
                     font: inherit;
                     font-weight: 700;
                     padding: 10px 14px;
+                    box-shadow: 0 14px 30px rgba(111, 190, 225, 0.24);
                 }}
                 ul {{ list-style: none; margin: 0; padding: 0; }}
                 li {{
@@ -604,8 +629,8 @@ def dashboard(
                     display: inline-block;
                     padding: 8px 12px;
                     border-radius: 999px;
-                    background: rgba(98, 119, 184, 0.2);
-                    color: var(--paint);
+                    background: rgba(255, 255, 255, 0.76);
+                    color: #1a739f;
                     font-weight: 700;
                     margin: 0 8px 8px 0;
                 }}
