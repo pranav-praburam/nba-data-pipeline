@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 os.environ["INGEST_API_KEY"] = "test-ingest-key"
 
+from app import config as config_module
 from app.api.routes import router
 from app.db.database import Base, get_db
 from app.db.models import Game, ModelPrediction, PipelineRun
@@ -144,6 +145,23 @@ def test_health_check():
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_allowed_hosts_fallback_does_not_block_raw_ip_deploy(monkeypatch):
+    monkeypatch.delenv("ALLOWED_HOSTS", raising=False)
+    monkeypatch.setattr(config_module, "APP_PUBLIC_BASE_URL", "")
+
+    assert config_module.build_allowed_hosts() == ["*"]
+
+
+def test_allowed_hosts_includes_public_base_url_host(monkeypatch):
+    monkeypatch.delenv("ALLOWED_HOSTS", raising=False)
+    monkeypatch.setattr(config_module, "APP_PUBLIC_BASE_URL", "http://16.54.146.35")
+
+    hosts = config_module.build_allowed_hosts()
+
+    assert "16.54.146.35" in hosts
+    assert "localhost" in hosts
 
 
 def test_games_can_filter_to_current_season():

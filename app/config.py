@@ -26,14 +26,22 @@ APP_PUBLIC_BASE_URL = os.getenv("APP_PUBLIC_BASE_URL", "").strip()
 
 
 def build_allowed_hosts() -> list[str]:
-    # Default to loopback-only hosts locally, then optionally expand from the
-    # explicit allowlist and deployed public URL in the environment.
-    allowed_hosts = set(get_list_env("ALLOWED_HOSTS", "localhost,127.0.0.1,::1"))
+    # Prefer an explicit allowlist when it is configured. If neither
+    # ALLOWED_HOSTS nor APP_PUBLIC_BASE_URL is present, fall back to "*" so a
+    # raw-IP Lightsail deployment cannot accidentally lock itself out.
+    raw_allowed_hosts = os.getenv("ALLOWED_HOSTS", "").strip()
+    if raw_allowed_hosts:
+        allowed_hosts = set(get_list_env("ALLOWED_HOSTS", ""))
+    else:
+        allowed_hosts = {"localhost", "127.0.0.1", "::1"}
 
     if APP_PUBLIC_BASE_URL:
         parsed_public_url = urlparse(APP_PUBLIC_BASE_URL)
         if parsed_public_url.hostname:
             allowed_hosts.add(parsed_public_url.hostname)
+
+    if allowed_hosts == {"localhost", "127.0.0.1", "::1"} and not APP_PUBLIC_BASE_URL:
+        return ["*"]
 
     return sorted(allowed_hosts)
 
