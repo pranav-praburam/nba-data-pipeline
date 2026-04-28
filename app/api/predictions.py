@@ -168,18 +168,17 @@ def prediction_page(
             <title>NBA Matchup Predictor</title>
             <style>
                 :root {{
-                    --bg: #eef8ff;
-                    --ink: #18415f;
-                    --muted: #5a86a2;
-                    --aqua: #67e3da;
-                    --sky: #8dc8ff;
-                    --lime: #dff7a6;
-                    --pink: #ff93c2;
-                    --violet: #c6b5ff;
-                    --paper: rgba(255, 255, 255, 0.78);
-                    --panel-alt: rgba(234, 248, 255, 0.78);
-                    --line: rgba(120, 198, 233, 0.34);
-                    --shadow: rgba(64, 149, 207, 0.2);
+                    --bg: #fdfefe;
+                    --ink: #23485f;
+                    --muted: #6f93a8;
+                    --aqua: #a7edf0;
+                    --sky: #c5e7ff;
+                    --mint: #dcf7ec;
+                    --ice: #eefaff;
+                    --paper: rgba(255, 255, 255, 0.96);
+                    --panel-alt: rgba(243, 251, 255, 0.94);
+                    --line: rgba(151, 204, 232, 0.42);
+                    --shadow: rgba(129, 189, 219, 0.14);
                     --font-display: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
                     --font-body: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
                     --font-mono: "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
@@ -191,12 +190,11 @@ def prediction_page(
                     font-family: var(--font-body);
                     color: var(--ink);
                     background:
-                        linear-gradient(90deg, rgba(141, 200, 255, 0.12) 1px, transparent 1px),
-                        linear-gradient(0deg, rgba(141, 200, 255, 0.12) 1px, transparent 1px),
-                        radial-gradient(circle at 14% 12%, rgba(103, 227, 218, 0.76), transparent 20rem),
-                        radial-gradient(circle at 85% 16%, rgba(223, 247, 166, 0.78), transparent 18rem),
-                        radial-gradient(circle at 72% 80%, rgba(255, 147, 194, 0.38), transparent 22rem),
-                        linear-gradient(180deg, #f8fdff 0%, #def4ff 40%, #d5e9ff 72%, #fcfbff 100%);
+                        linear-gradient(90deg, rgba(188, 224, 245, 0.12) 1px, transparent 1px),
+                        linear-gradient(0deg, rgba(188, 224, 245, 0.12) 1px, transparent 1px),
+                        radial-gradient(circle at 14% 12%, rgba(167, 237, 240, 0.68), transparent 18rem),
+                        radial-gradient(circle at 86% 16%, rgba(197, 231, 255, 0.72), transparent 17rem),
+                        linear-gradient(180deg, #ffffff 0%, #f4fbff 48%, #eef8ff 100%);
                     background-size: 48px 48px, 48px 48px, auto, auto, auto;
                 }}
                 main {{
@@ -206,15 +204,15 @@ def prediction_page(
                 }}
                 .card {{
                     background:
-                        linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(235, 249, 255, 0.76)),
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 251, 255, 0.94)),
                         var(--paper);
                     border: 1px solid var(--line);
                     border-radius: 30px;
                     box-shadow:
-                        0 24px 80px var(--shadow),
+                        0 18px 46px var(--shadow),
                         inset 0 1px 0 rgba(255, 255, 255, 0.96);
                     padding: 28px;
-                    backdrop-filter: blur(18px) saturate(140%);
+                    backdrop-filter: blur(10px);
                 }}
                 h1 {{
                     margin: 0 0 14px;
@@ -225,7 +223,7 @@ def prediction_page(
                     letter-spacing: -0.055em;
                 }}
                 .eyebrow {{
-                    color: #43c7cb;
+                    color: #72cdd7;
                     font-family: var(--font-mono);
                     font-weight: 700;
                     letter-spacing: 0.16em;
@@ -260,15 +258,15 @@ def prediction_page(
                 button, a.button {{
                     border: 0;
                     border-radius: 999px;
-                    background: linear-gradient(135deg, #7be8df, #fff8a6 55%, #ff9dc6);
-                    color: #16435d;
+                    background: linear-gradient(180deg, #ffffff, #dff5ff);
+                    color: #2f657f;
                     cursor: pointer;
                     display: inline-block;
                     font: inherit;
                     font-weight: 700;
                     padding: 13px 16px;
                     text-decoration: none;
-                    box-shadow: 0 14px 30px rgba(111, 190, 225, 0.24);
+                    box-shadow: 0 12px 24px rgba(129, 189, 219, 0.16);
                 }}
                 .result {{
                     display: grid;
@@ -279,9 +277,9 @@ def prediction_page(
                 .winner {{
                     grid-column: 1 / -1;
                     background:
-                        radial-gradient(circle at top left, rgba(123, 232, 223, 0.66), transparent 10rem),
-                        radial-gradient(circle at top right, rgba(223, 247, 166, 0.7), transparent 10rem),
-                        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(233, 247, 255, 0.82));
+                        radial-gradient(circle at top left, rgba(167, 237, 240, 0.7), transparent 10rem),
+                        radial-gradient(circle at top right, rgba(197, 231, 255, 0.7), transparent 10rem),
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(239, 249, 255, 0.94));
                     color: var(--ink);
                     border-radius: 24px;
                     padding: 24px;
@@ -318,11 +316,11 @@ def prediction_page(
                 .bar span {{
                     display: block;
                     height: 100%;
-                    background: linear-gradient(90deg, var(--aqua), var(--sky), var(--pink), var(--violet));
+                    background: linear-gradient(90deg, #9be7ee, #b5dcff);
                     border-radius: inherit;
                 }}
                 nav {{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }}
-                nav a {{ color: #1b6fa1; font-family: var(--font-mono); font-weight: 700; text-decoration: none; }}
+                nav a {{ color: #4d8fb5; font-family: var(--font-mono); font-weight: 700; text-decoration: none; }}
                 @media (max-width: 760px) {{
                     form, .result {{ grid-template-columns: 1fr; }}
                     .winner {{ grid-column: auto; }}

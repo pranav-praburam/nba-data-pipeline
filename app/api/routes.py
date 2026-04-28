@@ -52,18 +52,15 @@ def home(db: Session = Depends(get_db)):
             <title>NBA Data Pipeline</title>
             <style>
                 :root {
-                    --bg: #eef8ff;
-                    --ink: #18415f;
-                    --muted: #5a86a2;
-                    --aqua: #67e3da;
-                    --sky: #8dc8ff;
-                    --lime: #dff7a6;
-                    --pink: #ff93c2;
-                    --violet: #c6b5ff;
-                    --glass: rgba(255, 255, 255, 0.68);
-                    --glass-strong: rgba(255, 255, 255, 0.82);
-                    --line: rgba(120, 198, 233, 0.34);
-                    --shadow: rgba(64, 149, 207, 0.2);
+                    --bg: #fdfefe;
+                    --ink: #23485f;
+                    --muted: #6f93a8;
+                    --aqua: #a7edf0;
+                    --sky: #c5e7ff;
+                    --mint: #dcf7ec;
+                    --ice: #eefaff;
+                    --line: rgba(151, 204, 232, 0.42);
+                    --shadow: rgba(129, 189, 219, 0.16);
                     --font-display: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
                     --font-body: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
                     --font-mono: "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
@@ -74,10 +71,9 @@ def home(db: Session = Depends(get_db)):
                     font-family: var(--font-body);
                     color: var(--ink);
                     background:
-                        radial-gradient(circle at 18% 16%, rgba(103, 227, 218, 0.72), transparent 22rem),
-                        radial-gradient(circle at 82% 18%, rgba(223, 247, 166, 0.72), transparent 20rem),
-                        radial-gradient(circle at 70% 78%, rgba(255, 147, 194, 0.45), transparent 24rem),
-                        linear-gradient(180deg, #f6fdff 0%, #dff3ff 42%, #d6e8ff 72%, #fefbff 100%);
+                        radial-gradient(circle at 18% 12%, rgba(167, 237, 240, 0.65), transparent 18rem),
+                        radial-gradient(circle at 84% 16%, rgba(197, 231, 255, 0.75), transparent 18rem),
+                        linear-gradient(180deg, #ffffff 0%, #f4fbff 50%, #edf8ff 100%);
                     min-height: 100vh;
                 }
                 main {
@@ -93,15 +89,14 @@ def home(db: Session = Depends(get_db)):
                 }
                 .card {
                     background:
-                        linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(237, 249, 255, 0.72)),
-                        var(--glass);
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 252, 255, 0.92));
                     border: 1px solid var(--line);
                     border-radius: 28px;
                     box-shadow:
-                        0 24px 80px var(--shadow),
+                        0 18px 48px var(--shadow),
                         inset 0 1px 0 rgba(255, 255, 255, 0.9);
                     padding: 28px;
-                    backdrop-filter: blur(18px) saturate(135%);
+                    backdrop-filter: blur(10px);
                 }
                 h1 {
                     font-family: var(--font-display);
@@ -118,7 +113,7 @@ def home(db: Session = Depends(get_db)):
                     text-transform: uppercase;
                     letter-spacing: 0.18em;
                     margin: 0 0 18px;
-                    color: #4ac5cb;
+                    color: #72cdd7;
                 }
                 p {
                     font-size: 1.08rem;
@@ -136,7 +131,7 @@ def home(db: Session = Depends(get_db)):
                     border: 1px solid var(--line);
                     border-radius: 20px;
                     padding: 18px;
-                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(218, 244, 255, 0.68));
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(239, 249, 255, 0.92));
                 }
                 .metric strong {
                     font-family: var(--font-display);
@@ -155,10 +150,10 @@ def home(db: Session = Depends(get_db)):
                     min-height: 340px;
                     overflow: hidden;
                     background:
-                        radial-gradient(circle at 18% 16%, rgba(103, 227, 218, 0.7), transparent 12rem),
-                        radial-gradient(circle at 84% 12%, rgba(223, 247, 166, 0.8), transparent 10rem),
-                        linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(215, 240, 255, 0.78)),
-                        linear-gradient(180deg, #dbf3ff, #f6fbff);
+                        radial-gradient(circle at 18% 16%, rgba(167, 237, 240, 0.7), transparent 11rem),
+                        radial-gradient(circle at 84% 12%, rgba(220, 247, 236, 0.8), transparent 10rem),
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(229, 246, 255, 0.9)),
+                        linear-gradient(180deg, #eefaff, #ffffff);
                 }
                 .court::before {
                     content: "";
@@ -183,8 +178,8 @@ def home(db: Session = Depends(get_db)):
                     width: 14px;
                     height: 14px;
                     border-radius: 999px;
-                    background: linear-gradient(180deg, #ff7ab8, #6bdbff);
-                    box-shadow: 0 0 0 9px rgba(255, 255, 255, 0.42);
+                    background: linear-gradient(180deg, #72dbe8, #9ecfff);
+                    box-shadow: 0 0 0 9px rgba(255, 255, 255, 0.75);
                     animation: pop 900ms ease both;
                 }
                 .shot:nth-child(1) { left: 22%; top: 30%; }
@@ -199,7 +194,7 @@ def home(db: Session = Depends(get_db)):
                 }
                 a {
                     font-family: var(--font-body);
-                    color: #1b6fa1;
+                    color: #4d8fb5;
                     font-weight: 700;
                     text-decoration: none;
                 }
@@ -207,18 +202,18 @@ def home(db: Session = Depends(get_db)):
                     display: block;
                     border: 1px solid var(--line);
                     border-radius: 18px;
-                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(223, 244, 255, 0.7));
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 248, 255, 0.92));
                     padding: 16px;
                     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
                 }
                 .primary-link {
                     display: inline-block;
-                    color: #16435d;
-                    background: linear-gradient(135deg, #7be8df, #fff8a6 55%, #ff9dc6);
+                    color: #2f657f;
+                    background: linear-gradient(180deg, #ffffff, #dff5ff);
                     border: 1px solid rgba(120, 198, 233, 0.45);
                     border-radius: 999px;
                     box-shadow:
-                        0 16px 36px rgba(111, 190, 225, 0.28),
+                        0 12px 28px rgba(129, 189, 219, 0.18),
                         inset 0 1px 0 rgba(255, 255, 255, 0.95);
                     padding: 14px 18px;
                     margin: 6px 10px 8px 0;
@@ -227,7 +222,7 @@ def home(db: Session = Depends(get_db)):
                     display: inline-block;
                     border: 1px solid var(--line);
                     border-radius: 999px;
-                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(222, 241, 255, 0.72));
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 250, 255, 0.92));
                     padding: 14px 18px;
                     margin: 6px 0 8px;
                     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
@@ -406,18 +401,17 @@ def dashboard(
             <title>NBA Analytics Dashboard</title>
             <style>
                 :root {{
-                    --bg: #eef8ff;
-                    --ink: #18415f;
-                    --muted: #5a86a2;
-                    --aqua: #67e3da;
-                    --sky: #8dc8ff;
-                    --lime: #dff7a6;
-                    --pink: #ff93c2;
-                    --violet: #c6b5ff;
-                    --panel: rgba(255, 255, 255, 0.72);
-                    --panel-soft: rgba(240, 251, 255, 0.82);
-                    --line: rgba(120, 198, 233, 0.34);
-                    --shadow: rgba(64, 149, 207, 0.18);
+                    --bg: #fdfefe;
+                    --ink: #23485f;
+                    --muted: #6f93a8;
+                    --aqua: #a7edf0;
+                    --sky: #c5e7ff;
+                    --mint: #dcf7ec;
+                    --ice: #eefaff;
+                    --panel: rgba(255, 255, 255, 0.95);
+                    --panel-soft: rgba(243, 251, 255, 0.94);
+                    --line: rgba(151, 204, 232, 0.42);
+                    --shadow: rgba(129, 189, 219, 0.14);
                     --font-display: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
                     --font-body: "Avenir Next", "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
                     --font-mono: "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
@@ -428,12 +422,11 @@ def dashboard(
                     font-family: var(--font-body);
                     color: var(--ink);
                     background:
-                        linear-gradient(90deg, rgba(141, 200, 255, 0.12) 1px, transparent 1px),
-                        linear-gradient(0deg, rgba(141, 200, 255, 0.12) 1px, transparent 1px),
-                        radial-gradient(circle at 14% 12%, rgba(103, 227, 218, 0.75), transparent 20rem),
-                        radial-gradient(circle at 85% 18%, rgba(223, 247, 166, 0.75), transparent 18rem),
-                        radial-gradient(circle at 74% 76%, rgba(255, 147, 194, 0.4), transparent 22rem),
-                        linear-gradient(180deg, #f7fdff 0%, #ddf2ff 38%, #d6e9ff 70%, #fbfcff 100%);
+                        linear-gradient(90deg, rgba(188, 224, 245, 0.12) 1px, transparent 1px),
+                        linear-gradient(0deg, rgba(188, 224, 245, 0.12) 1px, transparent 1px),
+                        radial-gradient(circle at 14% 12%, rgba(167, 237, 240, 0.68), transparent 18rem),
+                        radial-gradient(circle at 86% 16%, rgba(197, 231, 255, 0.72), transparent 17rem),
+                        linear-gradient(180deg, #ffffff 0%, #f4fbff 48%, #eef8ff 100%);
                     background-size: 48px 48px, 48px 48px, auto, auto, auto;
                     min-height: 100vh;
                 }}
@@ -458,14 +451,14 @@ def dashboard(
                     letter-spacing: -0.055em;
                 }}
                 .eyebrow {{
-                    color: #43c7cb;
+                    color: #72cdd7;
                     font-family: var(--font-mono);
                     font-weight: 700;
                     letter-spacing: 0.16em;
                     text-transform: uppercase;
                     font-size: 0.8rem;
                 }}
-                a {{ color: #1b6fa1; font-family: var(--font-body); font-weight: 700; text-decoration: none; }}
+                a {{ color: #4d8fb5; font-family: var(--font-body); font-weight: 700; text-decoration: none; }}
                 .grid {{
                     display: grid;
                     grid-template-columns: 1.35fr 0.65fr;
@@ -479,15 +472,15 @@ def dashboard(
                 }}
                 .card {{
                     background:
-                        linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(235, 249, 255, 0.76)),
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 251, 255, 0.94)),
                         var(--panel);
                     border: 1px solid var(--line);
                     border-radius: 28px;
                     box-shadow:
-                        0 24px 80px var(--shadow),
+                        0 18px 46px var(--shadow),
                         inset 0 1px 0 rgba(255, 255, 255, 0.96);
                     padding: 24px;
-                    backdrop-filter: blur(18px) saturate(140%);
+                    backdrop-filter: blur(10px);
                 }}
                 h2 {{ margin: 0 0 18px; font-family: var(--font-display); font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }}
                 .bar-row {{
@@ -499,17 +492,17 @@ def dashboard(
                 }}
                 .bar-track {{
                     height: 16px;
-                    background: rgba(141, 200, 255, 0.28);
+                    background: rgba(197, 231, 255, 0.52);
                     border-radius: 999px;
                     overflow: hidden;
                 }}
                 .bar-fill {{
                     height: 100%;
-                    background: linear-gradient(90deg, var(--aqua), var(--sky), var(--pink), var(--violet));
+                    background: linear-gradient(90deg, #9be7ee, #b5dcff);
                     border-radius: inherit;
                 }}
                 .stat {{
-                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(226, 246, 255, 0.74));
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 250, 255, 0.94));
                     border: 1px solid var(--line);
                     border-radius: 20px;
                     padding: 18px;
@@ -520,7 +513,7 @@ def dashboard(
                 .stat strong, .mini-stat strong {{ font-family: var(--font-display); font-weight: 700; }}
                 .stat span {{ color: var(--muted); font-family: var(--font-mono); }}
                 .mini-stat {{
-                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(226, 246, 255, 0.74));
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 250, 255, 0.94));
                     border: 1px solid var(--line);
                     border-radius: 22px;
                     padding: 16px;
@@ -539,9 +532,9 @@ def dashboard(
                 .prediction-card {{
                     margin-top: 16px;
                     background:
-                        radial-gradient(circle at top left, rgba(123, 232, 223, 0.66), transparent 10rem),
-                        radial-gradient(circle at top right, rgba(223, 247, 166, 0.7), transparent 10rem),
-                        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(232, 247, 255, 0.82));
+                        radial-gradient(circle at top left, rgba(167, 237, 240, 0.7), transparent 10rem),
+                        radial-gradient(circle at top right, rgba(197, 231, 255, 0.7), transparent 10rem),
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(239, 249, 255, 0.94));
                     color: var(--ink);
                 }}
                 .prediction-card p {{
@@ -550,12 +543,12 @@ def dashboard(
                 }}
                 .prediction-card a {{
                     display: inline-block;
-                    color: #16435d;
-                    background: linear-gradient(135deg, #7be8df, #fff8a6 55%, #ff9dc6);
+                    color: #2f657f;
+                    background: linear-gradient(180deg, #ffffff, #dff5ff);
                     border-radius: 999px;
                     padding: 10px 14px;
                     margin-top: 6px;
-                    box-shadow: 0 14px 30px rgba(111, 190, 225, 0.24);
+                    box-shadow: 0 12px 24px rgba(129, 189, 219, 0.16);
                 }}
                 .prediction-result {{
                     display: grid;
@@ -569,7 +562,7 @@ def dashboard(
                 .prediction-result strong {{ font-size: 1.5rem; }}
                 .prediction-result span {{ color: var(--muted); }}
                 .prediction-result .label {{
-                    color: #ff73ad;
+                    color: #72cdd7;
                     font-size: 0.78rem;
                     font-weight: 700;
                     letter-spacing: 0.16em;
@@ -589,7 +582,7 @@ def dashboard(
                     width: 100%;
                     border: 1px solid rgba(120, 198, 233, 0.28);
                     border-radius: 14px;
-                    background: rgba(255, 255, 255, 0.72);
+                    background: rgba(255, 255, 255, 0.98);
                     color: var(--ink);
                     padding: 10px 12px;
                     font: inherit;
@@ -598,13 +591,13 @@ def dashboard(
                 .prediction-form button {{
                     border: 0;
                     border-radius: 999px;
-                    background: linear-gradient(135deg, #7be8df, #fff8a6 55%, #ff9dc6);
-                    color: #16435d;
+                    background: linear-gradient(180deg, #ffffff, #dff5ff);
+                    color: #2f657f;
                     cursor: pointer;
                     font: inherit;
                     font-weight: 700;
                     padding: 10px 14px;
-                    box-shadow: 0 14px 30px rgba(111, 190, 225, 0.24);
+                    box-shadow: 0 12px 24px rgba(129, 189, 219, 0.16);
                 }}
                 ul {{ list-style: none; margin: 0; padding: 0; }}
                 li {{
