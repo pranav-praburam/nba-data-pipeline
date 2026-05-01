@@ -22,6 +22,7 @@ def get_list_env(name: str, default: str) -> list[str]:
 
 ENABLE_DOCS = get_bool_env("ENABLE_DOCS", True)
 INGEST_API_KEY = os.getenv("INGEST_API_KEY")
+ODDS_API_KEY = os.getenv("ODDS_API_KEY")
 APP_PUBLIC_BASE_URL = os.getenv("APP_PUBLIC_BASE_URL", "").strip()
 
 

@@ -40,6 +40,7 @@ Best recruiter-friendly links:
 - Trusted host checks, basic browser security headers, and admin endpoint rate limiting are enabled in the FastAPI app.
 - The current site is public over `http://` by IP address. For real browser-trusted TLS encryption, move to a custom domain and terminate HTTPS with a reverse proxy such as Caddy or Nginx.
 - The deployed host allowlist now comes from `ALLOWED_HOSTS` and `APP_PUBLIC_BASE_URL`, so deployment-specific access stays in environment config rather than source code.
+- V2 odds integration uses `ODDS_API_KEY` from environment config rather than embedding sportsbook credentials in code or workflow files.
 
 Recommended demo path:
 
@@ -160,6 +161,32 @@ Security reminder:
 - Do not publish your `INGEST_API_KEY` in screenshots, bookmarks, or chat messages.
 - Keep `DEPLOYED_API_URL` and `INGEST_API_KEY` only in GitHub repository secrets and the server's `.env.lightsail`.
 - If you rotate the Lightsail IP or move to a custom domain, update `APP_PUBLIC_BASE_URL`, `ALLOWED_HOSTS`, and the `DEPLOYED_API_URL` GitHub secret together.
+
+## V2 Odds API Prep
+
+The V2 picks-tracking pipeline uses `the-odds-api.com` for a narrow first integration:
+
+- NBA only
+- moneyline (`h2h`) market only
+- one daily snapshot
+
+Setup checklist:
+
+- add `ODDS_API_KEY` to GitHub repository secrets
+- add `ODDS_API_KEY` to `.env.lightsail` on the server
+- use [scripts/test_odds_fetch.py](/Users/lalitha/nba-data-pipeline/scripts/test_odds_fetch.py) to verify your key and team-name mapping
+
+Inside the virtual environment, the smoke test command is:
+
+```bash
+python scripts/test_odds_fetch.py
+```
+
+Expected result:
+
+- raw NBA odds events are fetched successfully
+- team names normalize cleanly to the database naming convention
+- implied home and away win probabilities sum to 1.0 after vig removal
 
 ## ML Baseline Training
 

@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 from collections import defaultdict, deque
@@ -6,7 +7,7 @@ from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request
 
-from app.config import INGEST_API_KEY
+from app import config as config_module
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -52,13 +53,14 @@ def trigger_ingestion(
 ):
     # GitHub Actions and manual deployment checks call this endpoint to trigger
     # ingestion without exposing database credentials outside the deployed service.
-    if not INGEST_API_KEY:
+    ingest_api_key = os.getenv("INGEST_API_KEY") or config_module.INGEST_API_KEY
+    if not ingest_api_key:
         raise HTTPException(
             status_code=503,
             detail="Admin ingestion is disabled because INGEST_API_KEY is not configured.",
         )
 
-    if not x_api_key or not secrets.compare_digest(x_api_key, INGEST_API_KEY):
+    if not x_api_key or not secrets.compare_digest(x_api_key, ingest_api_key):
         raise HTTPException(status_code=401, detail="Invalid ingestion API key.")
 
     client_host = request.client.host if request.client else "unknown"
