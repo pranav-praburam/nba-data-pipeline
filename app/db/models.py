@@ -1,4 +1,14 @@
-from sqlalchemy import Column, DateTime, Float, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.sql import func
 from app.db.database import Base
 
@@ -23,6 +33,7 @@ class Game(Base):
     opponent = Column(String, nullable=False)
 
     matchup = Column(String, nullable=False)
+    is_home = Column(Boolean, nullable=True)
     wl = Column(String, nullable=True)
 
     points = Column(Integer, nullable=False)
@@ -67,3 +78,35 @@ class ModelPrediction(Base):
     last_n_games = Column(Integer, nullable=False)
     feature_inputs = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ModelPick(Base):
+    # Pre-game pick ledger for V2: stores model probability, sportsbook line,
+    # edge, and eventual settlement so the system can evaluate realized value.
+    __tablename__ = "model_picks"
+    __table_args__ = (
+        UniqueConstraint("game_date", "home_team", "away_team", name="uq_model_picks_game_matchup"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    game_date = Column(String, nullable=False)
+    game_id = Column(String, nullable=True)
+    home_team = Column(String, nullable=False)
+    away_team = Column(String, nullable=False)
+    model_home_win_prob = Column(Float, nullable=False)
+    model_away_win_prob = Column(Float, nullable=False)
+    home_moneyline = Column(Integer, nullable=True)
+    away_moneyline = Column(Integer, nullable=True)
+    implied_home_win_prob = Column(Float, nullable=True)
+    implied_away_win_prob = Column(Float, nullable=True)
+    edge = Column(Float, nullable=True)
+    pick = Column(String, nullable=True)
+    confidence_tier = Column(String, nullable=True)
+    pick_reason = Column(Text, nullable=True)
+    actual_winner = Column(String, nullable=True)
+    correct = Column(Boolean, nullable=True)
+    settled = Column(Boolean, nullable=False, default=False, server_default="false")
+    model_version = Column(String, nullable=True)
+    odds_source = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    settled_at = Column(DateTime(timezone=True), nullable=True)

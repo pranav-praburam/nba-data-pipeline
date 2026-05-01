@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from datetime import datetime, timezone
+from typing import Optional
 
 import pandas as pd
 import requests
@@ -19,7 +20,7 @@ NBA_API_RETRIES = int(os.getenv("NBA_API_RETRIES", "3"))
 GAME_COLUMNS = [
     "GAME_ID", "GAME_DATE", "SEASON_ID",
     "TEAM_ID", "TEAM_NAME",
-    "MATCHUP", "WL", "PTS", "REB", "AST",
+    "MATCHUP", "IS_HOME", "WL", "PTS", "REB", "AST",
     "FG_PCT", "FG3_PCT", "FT_PCT", "OPPONENT",
 ]
 
@@ -62,11 +63,19 @@ def fetch_games_dataframe(season="2024-25", timeout=NBA_API_TIMEOUT, retries=NBA
     ]
     df = df[columns_needed].copy()
 
+    def infer_is_home(matchup: str) -> Optional[bool]:
+        if " vs. " in matchup:
+            return True
+        if " @ " in matchup:
+            return False
+        return None
+
     def parse_opponent(matchup: str) -> str:
         parts = matchup.replace(" vs. ", " @ ").split(" @ ")
         return parts[1] if len(parts) > 1 else "Unknown"
 
     df["OPPONENT"] = df["MATCHUP"].apply(parse_opponent)
+    df["IS_HOME"] = df["MATCHUP"].apply(infer_is_home)
     df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
 
     return df
@@ -111,6 +120,7 @@ def build_live_team_row(game, team_key, opponent_key, season):
             if is_home
             else f"{team_code} @ {opponent_code}"
         ),
+        "IS_HOME": is_home,
         "WL": "W" if team_score > opponent_score else "L",
         "PTS": stats["points"],
         "REB": stats["reboundsTotal"],
@@ -173,6 +183,7 @@ def build_game_records(df):
                 "opponent_id": 0,
                 "opponent": row["OPPONENT"],
                 "matchup": row["MATCHUP"],
+                "is_home": bool(row["IS_HOME"]) if pd.notna(row["IS_HOME"]) else None,
                 "wl": row["WL"],
                 "points": int(row["PTS"]) if pd.notna(row["PTS"]) else 0,
                 "rebounds": int(row["REB"]) if pd.notna(row["REB"]) else None,
