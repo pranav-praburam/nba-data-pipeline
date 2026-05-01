@@ -1,0 +1,32 @@
+{
+  "model_type": "LogisticRegression",
+  "rolling_window_games": 10,
+  "hyperparameters": {
+    "C": 0.01,
+    "class_weight": "balanced",
+    "dual": false,
+    "fit_intercept": true,
+    "intercept_scaling": 1,
+    "l1_ratio": null,
+    "max_iter": 1000,
+    "multi_class": "deprecated",
+    "n_jobs": null,
+    "penalty": "l2",
+    "random_state": 42,
+    "solver": "liblinear",
+    "tol": 0.0001,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "train_rows": 2095,
+  "test_rows": 524,
+  "rows_total": 2619,
+  "date_range_start": "2024-10-13",
+  "date_range_end": "2026-04-12",
+  "test_set_start": "2026-01-29",
+  "test_set_end": "2026-04-12",
+  "feature_count": 24,
+  "test_set_is_chronological_tail": true,
+  "home_team_baseline_accuracy": 0.5611,
+  "frozen_at": "2026-04-30"
+}
