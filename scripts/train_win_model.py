@@ -31,44 +31,55 @@ from app.db.models import Game
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, module=r"sklearn\..*")
 
-
-FEATURE_COLUMNS = [
-    "home_win_rate_l10",
-    "home_avg_points_l10",
-    "home_avg_points_allowed_l10",
-    "home_avg_point_diff_l10",
-    "home_avg_rebounds_l10",
-    "home_avg_assists_l10",
-    "home_avg_fg_pct_l10",
-    "home_avg_fg3_pct_l10",
-    "away_win_rate_l10",
-    "away_avg_points_l10",
-    "away_avg_points_allowed_l10",
-    "away_avg_point_diff_l10",
-    "away_avg_rebounds_l10",
-    "away_avg_assists_l10",
-    "away_avg_fg_pct_l10",
-    "away_avg_fg3_pct_l10",
-    "diff_win_rate_l10",
-    "diff_avg_points_l10",
-    "diff_avg_points_allowed_l10",
-    "diff_avg_point_diff_l10",
-    "diff_avg_rebounds_l10",
-    "diff_avg_assists_l10",
-    "diff_avg_fg_pct_l10",
-    "diff_avg_fg3_pct_l10",
+ROLLING_WINDOWS = (5, 10, 20)
+ROLLING_STAT_SPECS = [
+    ("win", "win_rate"),
+    ("points", "avg_points"),
+    ("points_allowed", "avg_points_allowed"),
+    ("point_diff", "avg_point_diff"),
+    ("rebounds", "avg_rebounds"),
+    ("assists", "avg_assists"),
+    ("fg_pct", "avg_fg_pct"),
+    ("fg3_pct", "avg_fg3_pct"),
 ]
 
-BASE_ROLLING_FEATURES = [
-    "win_rate_l10",
-    "avg_points_l10",
-    "avg_points_allowed_l10",
-    "avg_point_diff_l10",
-    "avg_rebounds_l10",
-    "avg_assists_l10",
-    "avg_fg_pct_l10",
-    "avg_fg3_pct_l10",
-]
+
+def build_feature_columns():
+    columns = []
+    for window in ROLLING_WINDOWS:
+        for _, alias in ROLLING_STAT_SPECS:
+            feature_name = f"{alias}_l{window}"
+            columns.extend(
+                [
+                    f"home_{feature_name}",
+                    f"away_{feature_name}",
+                    f"diff_{feature_name}",
+                ]
+            )
+
+    for window in ROLLING_WINDOWS:
+        for _, alias in ROLLING_STAT_SPECS:
+            split_feature_name = f"split_{alias}_l{window}"
+            columns.extend(
+                [
+                    f"home_{split_feature_name}",
+                    f"away_{split_feature_name}",
+                ]
+            )
+
+    columns.extend(
+        [
+            "home_rest_days",
+            "away_rest_days",
+            "rest_days_diff",
+            "home_b2b",
+            "away_b2b",
+        ]
+    )
+    return columns
+
+
+FEATURE_COLUMNS = build_feature_columns()
 
 
 def load_games_dataframe():
@@ -96,6 +107,7 @@ def load_games_dataframe():
                 "team": row.team,
                 "opponent": row.opponent,
                 "matchup": row.matchup,
+                "is_home": row.is_home,
                 "wl": row.wl,
                 "points": row.points,
                 "rebounds": row.rebounds,
@@ -132,48 +144,57 @@ def add_opponent_context(df):
     return df
 
 
-def add_rolling_features(df, window):
+def add_schedule_context(df):
+    # Rest days and back-to-back flags are computed per team from the previous
+    # game date, then attached before matchup-level feature assembly.
+    df = df.sort_values(["team", "game_date", "game_id"]).copy()
+    previous_game_date = df.groupby("team")["game_date"].shift(1)
+    df["rest_days"] = (df["game_date"] - previous_game_date).dt.days
+    df["is_back_to_back"] = (df["rest_days"] == 1).astype(int)
+    return df
+
+
+def add_rolling_features(df):
     # Shift before rolling so a game's own result never leaks into the features
     # used to predict that same game.
     df = add_opponent_context(df)
-    df = df.sort_values(["team", "game_date", "game_id"]).copy()
+    df = add_schedule_context(df)
     df["win"] = (df["wl"] == "W").astype(int)
 
-    rolling_inputs = {
-        "win": "win_rate_l10",
-        "points": "avg_points_l10",
-        "points_allowed": "avg_points_allowed_l10",
-        "point_diff": "avg_point_diff_l10",
-        "rebounds": "avg_rebounds_l10",
-        "assists": "avg_assists_l10",
-        "fg_pct": "avg_fg_pct_l10",
-        "fg3_pct": "avg_fg3_pct_l10",
-    }
+    for source_column, alias in ROLLING_STAT_SPECS:
+        for window in ROLLING_WINDOWS:
+            feature_column = f"{alias}_l{window}"
+            df[feature_column] = (
+                df.groupby("team")[source_column]
+                .transform(lambda values: values.shift(1).rolling(window, min_periods=3).mean())
+            )
 
-    for source_column, feature_column in rolling_inputs.items():
-        df[feature_column] = (
-            df.groupby("team")[source_column]
-            .transform(lambda values: values.shift(1).rolling(window, min_periods=3).mean())
-        )
+            split_feature_column = f"split_{alias}_l{window}"
+            df[split_feature_column] = (
+                df.groupby(["team", "is_home"])[source_column]
+                .transform(lambda values: values.shift(1).rolling(window, min_periods=3).mean())
+            )
 
     return df
 
 
-def build_training_dataset(games_df, window):
+def build_training_dataset(games_df):
     # Reconstruct each matchup as one row with home-team target and both teams'
     # pre-game rolling form. Games with incomplete pairs are skipped.
     if games_df.empty:
         return pd.DataFrame()
 
-    featured = add_rolling_features(games_df, window=window)
+    games_df = games_df.copy()
+    games_df["game_date"] = pd.to_datetime(games_df["game_date"])
+    featured = add_rolling_features(games_df)
     completed_games = []
 
     for _, group in featured.groupby("game_id"):
         if len(group) != 2:
             continue
 
-        home_rows = group[group["matchup"].str.contains(" vs. ", regex=False)]
-        away_rows = group[group["matchup"].str.contains(" @ ", regex=False)]
+        home_rows = group[group["is_home"] == True]  # noqa: E712
+        away_rows = group[group["is_home"] == False]  # noqa: E712
         if len(home_rows) != 1 or len(away_rows) != 1:
             continue
 
@@ -187,12 +208,23 @@ def build_training_dataset(games_df, window):
             "home_team": home["team"],
             "away_team": away["team"],
             "home_win": int(home["wl"] == "W"),
+            "home_rest_days": home["rest_days"],
+            "away_rest_days": away["rest_days"],
+            "rest_days_diff": home["rest_days"] - away["rest_days"],
+            "home_b2b": int(home["is_back_to_back"]),
+            "away_b2b": int(away["is_back_to_back"]),
         }
 
-        for feature in BASE_ROLLING_FEATURES:
-            row[f"home_{feature}"] = home[feature]
-            row[f"away_{feature}"] = away[feature]
-            row[f"diff_{feature}"] = home[feature] - away[feature]
+        for _, alias in ROLLING_STAT_SPECS:
+            for window in ROLLING_WINDOWS:
+                feature = f"{alias}_l{window}"
+                row[f"home_{feature}"] = home[feature]
+                row[f"away_{feature}"] = away[feature]
+                row[f"diff_{feature}"] = home[feature] - away[feature]
+
+                split_feature = f"split_{alias}_l{window}"
+                row[f"home_{split_feature}"] = home[split_feature]
+                row[f"away_{split_feature}"] = away[split_feature]
 
         completed_games.append(row)
 
@@ -200,7 +232,11 @@ def build_training_dataset(games_df, window):
     if dataset.empty:
         return dataset
 
-    dataset = dataset.dropna(subset=FEATURE_COLUMNS + ["home_win"])
+    dataset["home_rest_days"] = dataset["home_rest_days"].fillna(7)
+    dataset["away_rest_days"] = dataset["away_rest_days"].fillna(7)
+    dataset["rest_days_diff"] = dataset["rest_days_diff"].fillna(0)
+    dataset["home_b2b"] = dataset["home_b2b"].fillna(0)
+    dataset["away_b2b"] = dataset["away_b2b"].fillna(0)
     dataset[FEATURE_COLUMNS] = dataset[FEATURE_COLUMNS].replace([np.inf, -np.inf], np.nan)
     dataset = dataset.dropna(subset=FEATURE_COLUMNS)
     return dataset.sort_values(["game_date", "game_id"]).reset_index(drop=True)
@@ -291,6 +327,7 @@ def save_artifacts(model, metrics, dataset, train_df, test_df, output_dir, windo
             "feature_columns": FEATURE_COLUMNS,
             "model_type": "logistic_regression",
             "rolling_window_games": window,
+            "rolling_windows": list(ROLLING_WINDOWS),
             "trained_at": datetime.now(timezone.utc).isoformat(),
         },
         model_path,
@@ -301,6 +338,7 @@ def save_artifacts(model, metrics, dataset, train_df, test_df, output_dir, windo
         "model_type": "logistic_regression",
         "target": "home_team_win",
         "rolling_window_games": window,
+        "rolling_windows": list(ROLLING_WINDOWS),
         "feature_columns": FEATURE_COLUMNS,
         "rows_total": len(dataset),
         "rows_train": len(train_df),
@@ -326,7 +364,20 @@ def main():
     args = parser.parse_args()
 
     games_df = load_games_dataframe()
-    dataset = build_training_dataset(games_df, window=args.rolling_window)
+    dataset = build_training_dataset(games_df)
+
+    print(
+        json.dumps(
+            {
+                "feature_count": len(FEATURE_COLUMNS),
+                "rolling_windows": list(ROLLING_WINDOWS),
+                "home_away_split_features_enabled": True,
+                "rest_day_features_enabled": True,
+                "feature_count_warning": len(FEATURE_COLUMNS) > 70,
+            },
+            indent=2,
+        )
+    )
 
     if len(dataset) < 100:
         raise ValueError(f"Not enough training rows. Found {len(dataset)} rows.")
