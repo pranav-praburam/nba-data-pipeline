@@ -21,7 +21,7 @@ from app.api.query_helpers import (
     season_query,
 )
 from app.db.database import get_db
-from app.db.models import Game
+from app.db.models import Game, ModelPick
 from app.services.picks import picks_performance_summary
 from app.services.predictions import load_win_probability_metrics, predict_matchup_win_probability
 
@@ -317,6 +317,12 @@ def dashboard(
         .limit(8)
         .all()
     )
+    recent_picks = (
+        db.query(ModelPick)
+        .order_by(ModelPick.created_at.desc(), ModelPick.id.desc())
+        .limit(8)
+        .all()
+    )
     latest_run = get_pipeline_runs(limit=1, db=db)
     model_prediction = predict_matchup_win_probability(
         db=db,
@@ -361,6 +367,21 @@ def dashboard(
         </tr>
         """
         for game in recent_games
+    )
+
+    pick_rows = "\n".join(
+        f"""
+        <tr>
+            <td>{escape(p.game_date)}</td>
+            <td>{escape(p.home_team)} vs {escape(p.away_team)}</td>
+            <td>{escape(p.pick or "n/a")}</td>
+            <td>{escape(str(round(p.edge, 4)) if p.edge is not None else "n/a")}</td>
+            <td>{escape(p.confidence_tier or "n/a")}</td>
+            <td>{'yes' if p.settled else 'no'}</td>
+            <td>{escape(str(p.correct) if p.settled else 'n/a')}</td>
+        </tr>
+        """
+        for p in recent_picks
     )
     run = latest_run[0] if latest_run else {}
     run_status = escape(str(run.get("status", "unknown")))
@@ -770,6 +791,21 @@ def dashboard(
                             <span class="pill">GitHub Actions</span>
                             <span class="pill">scikit-learn</span>
                             <span class="pill">AWS Lightsail</span>
+                        </p>
+                    </article>
+
+                    <article class="card full" style="margin-top: 22px;">
+                        <h2>Recent Picks</h2>
+                        <table>
+                            <thead>
+                                <tr><th>Date</th><th>Matchup</th><th>Pick</th><th>Edge</th><th>Tier</th><th>Settled</th><th>Correct</th></tr>
+                            </thead>
+                            <tbody>{pick_rows}</tbody>
+                        </table>
+                        <p class="eyebrow">
+                            <a href="/picks?limit=25">View all picks</a>
+                            <span style="margin: 0 10px;">|</span>
+                            <a href="/picks/summary">Summary JSON</a>
                         </p>
                     </article>
                 </section>
