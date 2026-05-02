@@ -2,9 +2,9 @@ name: Daily Model Picks (Settle)
 
 on:
   schedule:
-    # 12:00 UTC daily (roughly morning US Eastern during DST).
+    # Every 2 hours so picks settle soon after games complete.
     # We ingest first so settlement has the latest completed game results.
-    - cron: "0 12 * * *"
+    - cron: "35 */2 * * *"
   workflow_dispatch:
 
 jobs:

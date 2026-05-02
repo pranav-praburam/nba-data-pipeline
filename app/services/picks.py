@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import os
 from typing import Iterable, Optional
 
@@ -170,8 +170,10 @@ def settle_model_picks(
     season = os.getenv("NBA_SEASON", "unknown")
     settle_cutoff = settle_before_date
     if not settle_cutoff:
-        # Default: settle anything strictly before today (UTC).
-        settle_cutoff = date.today().isoformat()
+        # Default: attempt to settle anything up through today (UTC) by using a
+        # cutoff of tomorrow. Picks without results are skipped and can be
+        # retried on the next run.
+        settle_cutoff = (date.today() + timedelta(days=1)).isoformat()
 
     picks = (
         db.query(ModelPick)

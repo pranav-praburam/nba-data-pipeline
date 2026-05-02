@@ -2,7 +2,9 @@ name: Daily NBA Ingestion
 
 on:
   schedule:
-    - cron: "30 11 * * *"
+    # Every 2 hours so the database picks up newly completed games without
+    # needing manual triggers (especially during playoffs).
+    - cron: "15 */2 * * *"
   workflow_dispatch:
 
 jobs:
