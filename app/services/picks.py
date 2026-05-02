@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+import os
 from typing import Iterable, Optional
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Game, ModelPick
+from app.db.models import Game, ModelPick, PipelineRun
 from app.services.odds import NormalizedOddsEvent, fetch_odds, parse_moneyline_events
 from app.services.predictions import predict_matchup_win_probability
 
@@ -46,14 +47,32 @@ def generate_model_picks(
         raw = fetch_odds()
         odds_events = parse_moneyline_events(raw)
 
+    now = datetime.now(timezone.utc)
+    season = os.getenv("NBA_SEASON", "unknown")
+    run = PipelineRun(
+        pipeline_name="model_picks_generate",
+        season=season,
+        mode="upsert",
+        rows_fetched=0,
+        rows_inserted=0,
+        rows_skipped=0,
+        status="running",
+        started_at=now,
+    )
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+
     inserted = 0
     updated = 0
     skipped = 0
+    fetched = 0
 
     for event in odds_events:
         game_date = target_date or _iso_date_from_commence_time(event.commence_time)
         if target_date and game_date != target_date:
             continue
+        fetched += 1
 
         # Model endpoint assumes "team_a" is home and "team_b" is away.
         prediction = predict_matchup_win_probability(db, event.home_team, event.away_team, last_n)
@@ -119,6 +138,11 @@ def generate_model_picks(
             db.add(ModelPick(**payload))
             inserted += 1
 
+    run.rows_fetched = fetched
+    run.rows_inserted = inserted + updated
+    run.rows_skipped = skipped
+    run.status = "success"
+    run.completed_at = datetime.now(timezone.utc)
     db.commit()
     return {
         "status": "success",
@@ -127,6 +151,7 @@ def generate_model_picks(
         "rows_inserted": inserted,
         "rows_updated": updated,
         "rows_skipped": skipped,
+        "pipeline_run_id": run.id,
     }
 
 
@@ -142,6 +167,7 @@ def settle_model_picks(
     home team W/L result to determine the winner.
     """
     now = datetime.now(timezone.utc)
+    season = os.getenv("NBA_SEASON", "unknown")
     settle_cutoff = settle_before_date
     if not settle_cutoff:
         # Default: settle anything strictly before today (UTC).
@@ -154,6 +180,20 @@ def settle_model_picks(
         .order_by(ModelPick.game_date.asc(), ModelPick.id.asc())
         .all()
     )
+
+    run = PipelineRun(
+        pipeline_name="model_picks_settle",
+        season=season,
+        mode="update",
+        rows_fetched=len(picks),
+        rows_inserted=0,
+        rows_skipped=0,
+        status="running",
+        started_at=now,
+    )
+    db.add(run)
+    db.commit()
+    db.refresh(run)
 
     settled = 0
     missing_results = 0
@@ -187,12 +227,17 @@ def settle_model_picks(
         pick.game_id = home_row.game_id
         settled += 1
 
+    run.rows_inserted = settled
+    run.rows_skipped = missing_results
+    run.status = "success"
+    run.completed_at = datetime.now(timezone.utc)
     db.commit()
     return {
         "status": "success",
         "settled_count": settled,
         "missing_results_count": missing_results,
         "settle_before_date": settle_cutoff,
+        "pipeline_run_id": run.id,
     }
 
 

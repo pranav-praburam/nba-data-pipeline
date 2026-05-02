@@ -4,6 +4,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.database import Base
 from app.db.models import Game, ModelPick
+from app.db.models import PipelineRun
 from app.services.odds import NormalizedOddsEvent
 from app.services.picks import generate_model_picks, picks_performance_summary, settle_model_picks
 
@@ -50,16 +51,21 @@ def test_generate_model_picks_inserts_idempotent_rows(monkeypatch):
 
         result = generate_model_picks(db, target_date="2026-05-02", odds_events=[event], edge_threshold=0.03)
         assert result["rows_inserted"] == 1
+        assert result["pipeline_run_id"]
 
         # Second run should update the same row, not insert a duplicate.
         event.home_moneyline = 130
         result2 = generate_model_picks(db, target_date="2026-05-02", odds_events=[event], edge_threshold=0.03)
         assert result2["rows_inserted"] == 0
         assert result2["rows_updated"] == 1
+        assert result2["pipeline_run_id"]
 
         picks = db.query(ModelPick).all()
         assert len(picks) == 1
         assert picks[0].home_moneyline == 130
+
+        runs = db.query(PipelineRun).filter(PipelineRun.pipeline_name == "model_picks_generate").all()
+        assert len(runs) == 2
     finally:
         db.close()
 
@@ -135,11 +141,15 @@ def test_settle_model_picks_marks_correct_winner():
 
         result = settle_model_picks(db, settle_before_date="2026-04-11")
         assert result["settled_count"] == 1
+        assert result["pipeline_run_id"]
 
         pick = db.query(ModelPick).first()
         assert pick.settled is True
         assert pick.actual_winner == "Denver Nuggets"
         assert pick.correct is True
+
+        run = db.query(PipelineRun).filter(PipelineRun.pipeline_name == "model_picks_settle").first()
+        assert run is not None
     finally:
         db.close()
 
