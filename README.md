@@ -15,6 +15,8 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 
 - [Dashboard](http://16.54.146.35/dashboard)
 - [Prediction Page](http://16.54.146.35/predict)
+- [Picks (UI)](http://16.54.146.35/picks/view)
+- [Picks (Summary JSON)](http://16.54.146.35/picks/summary)
 - [API Docs](http://16.54.146.35/docs)
 - [Health Check](http://16.54.146.35/health)
 - [Recent Games](http://16.54.146.35/games?limit=5)
@@ -30,6 +32,7 @@ Best recruiter-friendly links:
 
 - [Main dashboard](http://16.54.146.35/dashboard)
 - [Interactive prediction page](http://16.54.146.35/predict)
+- [Picks tracking page](http://16.54.146.35/picks/view)
 - [API docs](http://16.54.146.35/docs)
 
 ## Security Notes
@@ -187,6 +190,25 @@ Expected result:
 - raw NBA odds events are fetched successfully
 - team names normalize cleanly to the database naming convention
 - implied home and away win probabilities sum to 1.0 after vig removal
+
+## V2 Picks Tracking (Odds + Model Edge)
+
+This project includes a V2 picks-tracking layer:
+
+- pulls NBA moneyline odds (daily snapshot)
+- generates picks when the model probability differs from the implied line probability (the "edge")
+- settles picks later once final game results exist in the `games` table
+
+Useful links:
+
+- Picks UI: `http://16.54.146.35/picks/view`
+- Picks raw JSON: `http://16.54.146.35/picks?limit=50`
+- Picks summary JSON: `http://16.54.146.35/picks/summary`
+
+How to interpret "settled":
+
+- `settled: false` means the game result hasn't been matched in the database yet (often because the game hasn't finished, or ingestion hasn't loaded that date).
+- `settled: true` means the pick has an `actual_winner` and `correct` is computed.
 
 ## ML Baseline Training
 
