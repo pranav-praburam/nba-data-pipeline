@@ -105,7 +105,8 @@ def test_settle_model_picks_marks_correct_winner():
                 team_id=1,
                 team="Denver Nuggets",
                 opponent_id=0,
-                opponent="Los Angeles Lakers",
+                # Opponent is often stored as an abbreviation in real data.
+                opponent="LAL",
                 matchup="DEN vs. LAL",
                 is_home=True,
                 wl="W",
@@ -125,7 +126,7 @@ def test_settle_model_picks_marks_correct_winner():
                 team_id=2,
                 team="Los Angeles Lakers",
                 opponent_id=0,
-                opponent="Denver Nuggets",
+                opponent="DEN",
                 matchup="LAL @ DEN",
                 is_home=False,
                 wl="L",

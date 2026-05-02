@@ -199,23 +199,39 @@ def settle_model_picks(
     missing_results = 0
 
     for pick in picks:
+        # Important: `games.opponent` is often an abbreviation (e.g., "MIN"),
+        # while picks store full team names. So we match by date + team + home/away,
+        # and then link the counterpart row by `game_id` when possible.
         home_row = (
             db.query(Game)
             .filter(Game.game_date == pick.game_date)
             .filter(Game.team == pick.home_team)
-            .filter(Game.opponent == pick.away_team)
             .filter(Game.is_home.is_(True))
             .first()
         )
-        away_row = (
-            db.query(Game)
-            .filter(Game.game_date == pick.game_date)
-            .filter(Game.team == pick.away_team)
-            .filter(Game.opponent == pick.home_team)
-            .filter(Game.is_home.is_(False))
-            .first()
-        )
-        if not home_row or not away_row:
+        if not home_row:
+            missing_results += 1
+            continue
+
+        away_row = None
+        if home_row.game_id:
+            away_row = (
+                db.query(Game)
+                .filter(Game.game_id == home_row.game_id)
+                .filter(Game.team == pick.away_team)
+                .filter(Game.is_home.is_(False))
+                .first()
+            )
+        if not away_row:
+            # Fallback if game_id link isn't present for some reason.
+            away_row = (
+                db.query(Game)
+                .filter(Game.game_date == pick.game_date)
+                .filter(Game.team == pick.away_team)
+                .filter(Game.is_home.is_(False))
+                .first()
+            )
+        if not away_row:
             missing_results += 1
             continue
 
