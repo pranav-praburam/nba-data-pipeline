@@ -166,7 +166,7 @@ Expected result:
 
 ## Scheduled Ingestion
 
-This repo includes `.github/workflows/daily-ingestion.yml`, which triggers an incremental current-season ingestion every day at 11:30 UTC and can also be triggered manually from GitHub Actions.
+This repo includes `.github/workflows/daily-ingestion.yml`, which triggers an incremental current-season ingestion automatically (every 2 hours) and can also be triggered manually from GitHub Actions.
 
 The workflow calls the deployed AWS Lightsail API instead of fetching NBA data directly from GitHub Actions. This avoids GitHub runner timeouts against `stats.nba.com`, keeps ingestion close to the deployed database, and keeps the admin key out of the repository by reading `DEPLOYED_API_URL` and `INGEST_API_KEY` from GitHub Secrets.
 
@@ -214,9 +214,14 @@ Expected result:
 
 This project includes a V2 picks-tracking layer:
 
-- pulls NBA moneyline odds (daily snapshot)
+- pulls NBA moneyline odds (periodic snapshot)
 - generates picks when the model probability differs from the implied line probability (the "edge")
 - settles picks later once final game results exist in the `games` table
+
+Automation:
+
+- `.github/workflows/daily-picks-generate.yml` runs picks generation automatically.
+- `.github/workflows/daily-picks-settle.yml` runs picks settlement automatically (every 2 hours) and triggers ingestion first so settlement has fresh results.
 
 Useful links:
 
