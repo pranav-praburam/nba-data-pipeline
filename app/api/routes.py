@@ -803,7 +803,7 @@ def dashboard(
                             <tbody>{pick_rows}</tbody>
                         </table>
                         <p class="eyebrow">
-                            <a href="/picks?limit=25">View all picks</a>
+                            <a href="/picks/view?limit=50">View all picks</a>
                             <span style="margin: 0 10px;">|</span>
                             <a href="/picks/summary">Summary JSON</a>
                         </p>

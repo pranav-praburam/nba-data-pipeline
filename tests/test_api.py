@@ -154,6 +154,13 @@ def test_picks_summary_endpoint_returns_shape():
     assert "tiers" in summary
 
 
+def test_picks_view_renders_html():
+    response = client.get("/picks/view?limit=5")
+
+    assert response.status_code == 200
+    assert "Model Picks" in response.text
+
+
 def setup_function():
     seed_data()
 
