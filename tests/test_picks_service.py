@@ -211,5 +211,7 @@ def test_picks_performance_summary_computes_accuracy_and_roi():
         assert summary["roi_per_pick"] == 0.5
         assert summary["tiers"]["high"]["accuracy"] == 1.0
         assert summary["tiers"]["low"]["accuracy"] == 0.0
+        assert summary["teams"]["Team A"]["accuracy"] == 1.0
+        assert summary["teams"]["Team C"]["accuracy"] == 0.0
     finally:
         db.close()

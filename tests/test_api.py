@@ -152,6 +152,7 @@ def test_picks_summary_endpoint_returns_shape():
     assert "settled_picks" in summary
     assert "accuracy" in summary
     assert "tiers" in summary
+    assert "teams" in summary
 
 
 def test_picks_view_renders_html():

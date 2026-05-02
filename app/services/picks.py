@@ -308,12 +308,31 @@ def picks_performance_summary(
             "profit_units": 0.0,
         }
 
+    # Team breakdown is keyed by the picked team. This answers "where does the
+    # edge actually show up over time?" without relying solely on aggregate
+    # accuracy.
+    teams = {}
+
     for pick in settled_query.all():
         stake_units += 1
         tier_key = pick.confidence_tier if pick.confidence_tier is not None else "unknown"
         tier_bucket = tiers.get(tier_key, tiers["unknown"])
         tier_bucket["settled"] += 1
         tier_bucket["total"] += 1
+
+        picked_team = pick.pick or "unknown"
+        team_bucket = teams.setdefault(
+            picked_team,
+            {
+                "total": 0,
+                "settled": 0,
+                "correct": 0,
+                "stake_units": 0,
+                "profit_units": 0.0,
+            },
+        )
+        team_bucket["settled"] += 1
+        team_bucket["total"] += 1
 
         # Determine the moneyline of the selected side.
         chosen_moneyline = None
@@ -324,21 +343,38 @@ def picks_performance_summary(
 
         if pick.correct:
             tier_bucket["correct"] += 1
+            team_bucket["correct"] += 1
             profit_per_unit = _moneyline_profit_per_unit(chosen_moneyline)
             if profit_per_unit is not None:
                 profit_units += profit_per_unit
                 tier_bucket["profit_units"] += profit_per_unit
+                team_bucket["profit_units"] += profit_per_unit
         else:
             profit_units -= 1.0
             tier_bucket["profit_units"] -= 1.0
+            team_bucket["profit_units"] -= 1.0
 
         tier_bucket["stake_units"] += 1
+        team_bucket["stake_units"] += 1
 
     # Include unsettled counts in tier totals.
     for pick in query.filter(ModelPick.settled.is_(False)).all():
         tier_key = pick.confidence_tier if pick.confidence_tier is not None else "unknown"
         tier_bucket = tiers.get(tier_key, tiers["unknown"])
         tier_bucket["total"] += 1
+
+        picked_team = pick.pick or "unknown"
+        team_bucket = teams.setdefault(
+            picked_team,
+            {
+                "total": 0,
+                "settled": 0,
+                "correct": 0,
+                "stake_units": 0,
+                "profit_units": 0.0,
+            },
+        )
+        team_bucket["total"] += 1
 
     def _rate(n: int, d: int) -> Optional[float]:
         if d <= 0:
@@ -358,6 +394,14 @@ def picks_performance_summary(
             "roi_per_pick": _roi(bucket["profit_units"], bucket["stake_units"]),
         }
 
+    team_stats = {}
+    for team_key, bucket in teams.items():
+        team_stats[team_key] = {
+            **bucket,
+            "accuracy": _rate(bucket["correct"], bucket["settled"]),
+            "roi_per_pick": _roi(bucket["profit_units"], bucket["stake_units"]),
+        }
+
     return {
         "since_date": since_date,
         "total_picks": total,
@@ -369,4 +413,5 @@ def picks_performance_summary(
         "profit_units": round(profit_units, 4),
         "roi_per_pick": _roi(profit_units, stake_units),
         "tiers": tier_stats,
+        "teams": team_stats,
     }
