@@ -11,6 +11,7 @@ from app.api.analytics import team_rankings
 from app.api.games import router as games_router
 from app.api.pipeline import router as pipeline_router
 from app.api.pipeline import get_pipeline_runs
+from app.api.picks import router as picks_router
 from app.api.predictions import router as predictions_router
 from app.api.query_helpers import (
     latest_season_year,
@@ -29,6 +30,7 @@ router.include_router(analytics_router)
 router.include_router(predictions_router)
 router.include_router(pipeline_router)
 router.include_router(admin_router)
+router.include_router(picks_router)
 
 @router.get("/")
 def home(db: Session = Depends(get_db)):

@@ -136,6 +136,13 @@ def seed_data():
         db.close()
 
 
+def test_list_picks_endpoint_returns_empty_when_no_picks_exist():
+    response = client.get("/picks?limit=5")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 def setup_function():
     seed_data()
 
