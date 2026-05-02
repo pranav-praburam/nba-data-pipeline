@@ -143,6 +143,17 @@ def test_list_picks_endpoint_returns_empty_when_no_picks_exist():
     assert response.json() == []
 
 
+def test_picks_summary_endpoint_returns_shape():
+    response = client.get("/picks/summary")
+
+    assert response.status_code == 200
+    summary = response.json()
+    assert "total_picks" in summary
+    assert "settled_picks" in summary
+    assert "accuracy" in summary
+    assert "tiers" in summary
+
+
 def setup_function():
     seed_data()
 

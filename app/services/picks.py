@@ -221,3 +221,107 @@ def serialize_pick(pick: ModelPick) -> dict:
         "created_at": pick.created_at,
         "settled_at": pick.settled_at,
     }
+
+
+def _moneyline_profit_per_unit(moneyline: Optional[int]) -> Optional[float]:
+    # 1 unit stake profit model:
+    # +150 => win profit 1.5 units; -150 => win profit 0.6667 units.
+    if moneyline is None:
+        return None
+    if moneyline == 0:
+        return None
+    if moneyline > 0:
+        return moneyline / 100.0
+    return 100.0 / abs(moneyline)
+
+
+def picks_performance_summary(
+    db: Session,
+    *,
+    since_date: Optional[str] = None,
+) -> dict:
+    query = db.query(ModelPick)
+    if since_date:
+        query = query.filter(ModelPick.game_date >= since_date)
+
+    total = query.count()
+    settled_query = query.filter(ModelPick.settled.is_(True))
+    settled = settled_query.count()
+    correct = settled_query.filter(ModelPick.correct.is_(True)).count()
+
+    stake_units = 0
+    profit_units = 0.0
+
+    # Breakdown by confidence tier for win rate + ROI.
+    tiers = {}
+    for tier in ["high", "medium", "low", "none", None]:
+        tiers[str(tier) if tier is not None else "unknown"] = {
+            "total": 0,
+            "settled": 0,
+            "correct": 0,
+            "stake_units": 0,
+            "profit_units": 0.0,
+        }
+
+    for pick in settled_query.all():
+        stake_units += 1
+        tier_key = pick.confidence_tier if pick.confidence_tier is not None else "unknown"
+        tier_bucket = tiers.get(tier_key, tiers["unknown"])
+        tier_bucket["settled"] += 1
+        tier_bucket["total"] += 1
+
+        # Determine the moneyline of the selected side.
+        chosen_moneyline = None
+        if pick.pick == pick.home_team:
+            chosen_moneyline = pick.home_moneyline
+        elif pick.pick == pick.away_team:
+            chosen_moneyline = pick.away_moneyline
+
+        if pick.correct:
+            tier_bucket["correct"] += 1
+            profit_per_unit = _moneyline_profit_per_unit(chosen_moneyline)
+            if profit_per_unit is not None:
+                profit_units += profit_per_unit
+                tier_bucket["profit_units"] += profit_per_unit
+        else:
+            profit_units -= 1.0
+            tier_bucket["profit_units"] -= 1.0
+
+        tier_bucket["stake_units"] += 1
+
+    # Include unsettled counts in tier totals.
+    for pick in query.filter(ModelPick.settled.is_(False)).all():
+        tier_key = pick.confidence_tier if pick.confidence_tier is not None else "unknown"
+        tier_bucket = tiers.get(tier_key, tiers["unknown"])
+        tier_bucket["total"] += 1
+
+    def _rate(n: int, d: int) -> Optional[float]:
+        if d <= 0:
+            return None
+        return round(n / d, 4)
+
+    def _roi(p: float, stake: int) -> Optional[float]:
+        if stake <= 0:
+            return None
+        return round(p / stake, 4)
+
+    tier_stats = {}
+    for tier_key, bucket in tiers.items():
+        tier_stats[tier_key] = {
+            **bucket,
+            "accuracy": _rate(bucket["correct"], bucket["settled"]),
+            "roi_per_pick": _roi(bucket["profit_units"], bucket["stake_units"]),
+        }
+
+    return {
+        "since_date": since_date,
+        "total_picks": total,
+        "settled_picks": settled,
+        "settled_rate": _rate(settled, total),
+        "correct_picks": correct,
+        "accuracy": _rate(correct, settled),
+        "stake_units": stake_units,
+        "profit_units": round(profit_units, 4),
+        "roi_per_pick": _roi(profit_units, stake_units),
+        "tiers": tier_stats,
+    }

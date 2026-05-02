@@ -5,7 +5,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.database import Base
 from app.db.models import Game, ModelPick
 from app.services.odds import NormalizedOddsEvent
-from app.services.picks import generate_model_picks, settle_model_picks
+from app.services.picks import generate_model_picks, picks_performance_summary, settle_model_picks
 
 
 engine = create_engine(
@@ -143,3 +143,63 @@ def test_settle_model_picks_marks_correct_winner():
     finally:
         db.close()
 
+
+def test_picks_performance_summary_computes_accuracy_and_roi():
+    db = TestingSessionLocal()
+    try:
+        # One correct underdog (+200 => +2.0 profit) and one incorrect favorite (-200 => -1.0 loss).
+        db.add(
+            ModelPick(
+                game_date="2026-04-10",
+                home_team="Team A",
+                away_team="Team B",
+                model_home_win_prob=0.55,
+                model_away_win_prob=0.45,
+                home_moneyline=200,
+                away_moneyline=-240,
+                implied_home_win_prob=0.35,
+                implied_away_win_prob=0.65,
+                edge=0.2,
+                pick="Team A",
+                confidence_tier="high",
+                pick_reason="test",
+                actual_winner="Team A",
+                correct=True,
+                settled=True,
+                odds_source="the-odds-api",
+            )
+        )
+        db.add(
+            ModelPick(
+                game_date="2026-04-10",
+                home_team="Team C",
+                away_team="Team D",
+                model_home_win_prob=0.6,
+                model_away_win_prob=0.4,
+                home_moneyline=-200,
+                away_moneyline=170,
+                implied_home_win_prob=0.6,
+                implied_away_win_prob=0.4,
+                edge=0.05,
+                pick="Team C",
+                confidence_tier="low",
+                pick_reason="test",
+                actual_winner="Team D",
+                correct=False,
+                settled=True,
+                odds_source="the-odds-api",
+            )
+        )
+        db.commit()
+
+        summary = picks_performance_summary(db)
+        assert summary["total_picks"] == 2
+        assert summary["settled_picks"] == 2
+        assert summary["accuracy"] == 0.5
+        assert summary["stake_units"] == 2
+        assert summary["profit_units"] == 1.0
+        assert summary["roi_per_pick"] == 0.5
+        assert summary["tiers"]["high"]["accuracy"] == 1.0
+        assert summary["tiers"]["low"]["accuracy"] == 0.0
+    finally:
+        db.close()

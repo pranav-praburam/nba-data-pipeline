@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.db.models import ModelPick
-from app.services.picks import serialize_pick
+from app.services.picks import picks_performance_summary, serialize_pick
 
 
 router = APIRouter(tags=["picks"])
@@ -24,3 +24,11 @@ def list_picks(
 
     rows = query.limit(limit).all()
     return [serialize_pick(row) for row in rows]
+
+
+@router.get("/picks/summary")
+def picks_summary(
+    since_date: str = None,
+    db: Session = Depends(get_db),
+):
+    return picks_performance_summary(db, since_date=since_date)
