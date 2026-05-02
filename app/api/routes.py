@@ -22,6 +22,7 @@ from app.api.query_helpers import (
 )
 from app.db.database import get_db
 from app.db.models import Game
+from app.services.picks import picks_performance_summary
 from app.services.predictions import load_win_probability_metrics, predict_matchup_win_probability
 
 router = APIRouter()
@@ -327,6 +328,10 @@ def dashboard(
     total_rows = nba_team_query(db.query(func.count(Game.id))).scalar() or 0
     unique_games = nba_team_query(db.query(func.count(func.distinct(Game.game_id)))).scalar() or 0
     latest_game_date = season_query(nba_team_query(db.query(func.max(Game.game_date))), season_year).scalar()
+    picks_summary = picks_performance_summary(db, since_date=None)
+    picks_total = picks_summary.get("total_picks", 0)
+    picks_accuracy = picks_summary.get("accuracy")
+    picks_roi = picks_summary.get("roi_per_pick")
 
     max_points = max((team["average"] for team in top_scoring_teams), default=1)
     points_rows = "\n".join(
@@ -661,6 +666,7 @@ def dashboard(
                         <a href="/predictions/matchup?team_a=Indiana%20Pacers&team_b=Oklahoma%20City%20Thunder&last_n=10">Prediction</a>
                         <a href="/predictions/history?limit=10">Prediction History</a>
                         <a href="/pipeline/runs?limit=3">Pipeline Runs</a>
+                        <a href="/picks?limit=25">Picks</a>
                     </nav>
                 </div>
 
@@ -706,6 +712,18 @@ def dashboard(
                         <div class="stat">
                             <strong>{escape(str(latest_game_date or "n/a"))}</strong>
                             <span>latest loaded game date</span>
+                        </div>
+                        <div class="stat">
+                            <strong>{picks_total}</strong>
+                            <span>total model picks logged</span>
+                        </div>
+                        <div class="stat">
+                            <strong>{picks_accuracy if picks_accuracy is not None else "n/a"}</strong>
+                            <span>pick accuracy (settled)</span>
+                        </div>
+                        <div class="stat">
+                            <strong>{picks_roi if picks_roi is not None else "n/a"}</strong>
+                            <span>ROI per pick (1u)</span>
                         </div>
                         <div class="card prediction-card">
                             <h2>ML Matchup Prediction</h2>

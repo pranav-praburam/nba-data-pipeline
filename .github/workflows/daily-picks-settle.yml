@@ -1,0 +1,30 @@
+name: Daily Model Picks (Settle)
+
+on:
+  schedule:
+    # 12:00 UTC daily (roughly morning US Eastern during DST).
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+
+    env:
+      DEPLOYED_API_URL: ${{ secrets.DEPLOYED_API_URL }}
+      INGEST_API_KEY: ${{ secrets.INGEST_API_KEY }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+    steps:
+      - name: Verify deployment secrets
+        run: |
+          test -n "$DEPLOYED_API_URL"
+          test -n "$INGEST_API_KEY"
+
+      - name: Trigger AWS Lightsail picks settlement
+        run: |
+          curl --fail-with-body --show-error --silent --max-time 240 \
+            --request POST \
+            --header "X-API-Key: $INGEST_API_KEY" \
+            "$DEPLOYED_API_URL/admin/picks/settle"
+
