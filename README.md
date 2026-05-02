@@ -10,6 +10,7 @@ A deployed NBA analytics project built with FastAPI, PostgreSQL, SQLAlchemy, Doc
 - Live dashboard for analytics, ingestion health, and ML prediction
 - Tuned scikit-learn model served through an API endpoint
 - GitHub Actions for CI and scheduled ingestion triggers
+- V2 picks tracking: odds ingestion, edge-based pick generation, and pick settlement with ROI tracking
 
 ## Live Demo
 
@@ -78,6 +79,21 @@ nba_api
   -> AWS Lightsail-hosted API + dashboard
 ```
 
+## What's New In V2
+
+V2 upgrades the project from "analytics + prediction" into a system that can track whether predictions are actionable using real sportsbook lines.
+
+Added in V2:
+
+- Alembic migrations (versioned schema changes for local + production)
+- `games.is_home` column (backfilled from `matchup`)
+- `model_picks` table with idempotency (`UNIQUE(game_date, home_team, away_team)`)
+- Odds ingestion using `the-odds-api.com` (NBA + moneyline)
+- Pick generation based on model-vs-line "edge"
+- Pick settlement once final results exist in the `games` table
+- Picks UI and summary endpoints for recruiter-friendly review
+- GitHub Actions automation for daily ingest, daily pick generation, and daily settlement (settlement runs ingestion first)
+
 ## API Endpoints
 
 - `GET /health`
@@ -93,6 +109,9 @@ nba_api
 - `GET /predictions/history?limit=10`
 - `GET /pipeline/runs?limit=3`
 - `GET /dashboard`
+- `GET /picks?limit=50`
+- `GET /picks/summary`
+- `GET /picks/view`
 
 For prediction endpoints, `team_a` is the home team and `team_b` is the away team. The visual `/predict` page labels these as Home Team and Away Team, while the query parameters keep their original names for API compatibility.
 
