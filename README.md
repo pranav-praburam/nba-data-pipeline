@@ -196,7 +196,6 @@ Setup checklist:
 
 - add `ODDS_API_KEY` to GitHub repository secrets
 - add `ODDS_API_KEY` to `.env.lightsail` on the server
-- use [scripts/test_odds_fetch.py](/Users/lalitha/nba-data-pipeline/scripts/test_odds_fetch.py) to verify your key and team-name mapping
 
 Inside the virtual environment, the smoke test command is:
 
